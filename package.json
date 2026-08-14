@@ -1,0 +1,44 @@
+{
+  "name": "reelkit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The reel and slideshow engine \u2014 a spoken script printed to the screen at the word, with the gates that stop a bad one before the voice is billed. Forked from tally/tools/store-shots, made multi-project.",
+  "bin": {
+    "reelkit": "./cli.mjs"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens": "./src/tokens.ts",
+    "./theme": "./src/theme.types.ts",
+    "./elements": "./src/elements.default.ts",
+    "./reveal": "./src/lab/reveal.ts",
+    "./stage": "./src/ReelElements.tsx",
+    "./src/*": "./src/*"
+  },
+  "files": [
+    "cli.mjs",
+    "src",
+    "scripts",
+    "docs",
+    "templates",
+    "tsconfig.json",
+    "remotion.config.ts"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.493",
+    "@remotion/cli": "^4.0.0",
+    "@remotion/renderer": "4.0.493",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "^4.0.0",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.5.0"
+  }
+}
