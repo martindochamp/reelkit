@@ -14,7 +14,23 @@
 // famous one-word foods reads at 15 px where a board of USDA descriptions
 // does not — and a checker that blocks a render gets worked around.
 
-import { LEGIBLE_MIN, illegibleRows, reelPt } from "../src/lab/tier-fit.mjs";
+import { LEGIBLE_PT, illegibleRows, reelPt } from "../src/lab/tier-fit.mjs";
+import { config } from "./project.mjs";
+
+/**
+ * The legibility floor, in AUTHORED px, derived from the project's own point
+ * floor.
+ *
+ * `tier-fit.mjs` exports LEGIBLE_MIN derived from a hardcoded 5.2 pt, and it
+ * has to stay hardcoded there: TierList.tsx imports that file, so it is
+ * BUNDLED and cannot reach project.mjs (node fs, a config on disk). But
+ * `gates.tierFloorPt` was documented in CONFIG.md and defaulted in
+ * project.mjs, so a project setting it moved nothing — the number the writer
+ * is warned against is a WARNING, which is script-side, so this is where the
+ * config belongs. Found on Papyr; the value the fixture ships is still 5.2.
+ */
+const floorPt = config.gates.tierFloorPt ?? LEGIBLE_PT;
+const LEGIBLE_MIN = Math.ceil(floorPt / (reelPt(1) || 1));
 
 /**
  * Warning lines for one tierlist spec — empty when every row reads.
@@ -23,7 +39,7 @@ import { LEGIBLE_MIN, illegibleRows, reelPt } from "../src/lab/tier-fit.mjs";
  */
 export const tierListWarnings = (props, { post, where }) => {
   const tiers = props?.tiers ?? [];
-  return illegibleRows(tiers).map((row) => {
+  return illegibleRows(tiers, LEGIBLE_MIN).map((row) => {
     // Say which of the two levers to pull, and which way. Row load first:
     // it is the one the writer chose last and the one that costs the most.
     const fix =

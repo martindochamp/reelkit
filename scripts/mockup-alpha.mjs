@@ -37,7 +37,7 @@ const BLACK = 12;
 
 const src = process.argv[2];
 if (!src) {
-  console.error("usage: npm run mockup:alpha <file>  (writes <file>.png beside it)");
+  console.error("usage: reelkit mockup:alpha <file>  (writes <file>.png beside it)");
   process.exit(1);
 }
 const abs = path.isAbsolute(src) ? src : path.join(process.cwd(), src);

@@ -751,6 +751,18 @@ after the critic sends it back.
    (2.8 s), which on a short beat is the frame the reel cuts away. Give
    it two — the grid prints on the first, the units go out on the second.
 
+   **The general shape: a part with no cue of its own is placed relative
+   to the last one, and the beat may end first.** Same family as the
+   `unitgrid`, and it is the reason `sfx-audit` names "a hit landing past
+   its beat" as a failure — the visual side has no such check. Measured on
+   Papyr's first reel, 2026-08-14: a `comparison` carrying a `verdict` and
+   given exactly `rows.length` cues put the verdict at
+   `lastCue + stagger + 8` — **twelve frames before the cut**, four tenths
+   of a second, on a row that is the beat's conclusion. Nothing warned; it
+   rendered, and it was only visible frame by frame. A `comparison` with a
+   verdict takes `rows.length + 1` cues, and any element whose last part is
+   the argument wants a marker of its own.
+
 9. **The endcard's keyword and the caption's keyword are one keyword.**
    `npm run gates` finds a word answering for two POSTS; it cannot see a
    post disagreeing with itself, and one shipped that way — the endcard

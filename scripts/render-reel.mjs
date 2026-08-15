@@ -40,6 +40,7 @@ import {
 } from "./reel-gates.mjs";
 import { buildSfx } from "./sfx.mjs";
 import { sourcedReady as sourcedEffect } from "./sfx-import.mjs";
+import { config } from "./project.mjs";
 import { postsDir, projectDir } from "./stage.mjs";
 import { warnTierList } from "./tier-legibility.mjs";
 import { forget, speak } from "./tts.mjs";
@@ -506,10 +507,22 @@ for (const name of names) {
       // no-op. `appstore-row.png` is made from the .jpg by
       // `npm run mockup:alpha` (border flood fill, then cropped to the
       // ink); both originals stay selectable per post via `file`.
-      el.file = el.file ?? "appstore-row.png";
+      //
+      // The default comes from the PROJECT (`endcard.asset` in
+      // reel.config.mjs). It was the literal "appstore-row.png" here, which is
+      // the file one account happens to have cut; a project with no such
+      // capture got "endcard not found in posts/mockups/" naming a file it had
+      // never heard of. Found on Papyr, which has no row cut yet — so the
+      // refusal now says what to set and what to run.
+      el.file = el.file ?? config.endcard?.asset ?? "appstore-row.png";
       const src = path.join(postsDir, "mockups", el.file);
       if (!existsSync(src)) {
-        throw new Error(`endcard "${el.file}" not found in posts/mockups/`);
+        throw new Error(
+          `endcard "${el.file}" not found in posts/mockups/.\n` +
+            `       Set \`endcard.asset\` in reel.config.mjs to the row this ` +
+            `project actually has, cut one with \`reelkit mockup:alpha\`, or ` +
+            `sign off with the \`cta\` element, which needs no asset.`,
+        );
       }
       const dir = path.join(projectDir, "public", "mockups");
       mkdirSync(dir, { recursive: true });
@@ -819,7 +832,7 @@ for (const name of names) {
     if (!ready) {
       throw new Error(
         `this post asks for room tone and posts/sfx/sourced/room-tone.wav ` +
-          `is not imported — npm run sfx:import.`,
+          `is not imported — \`reelkit sfx:import\`.`,
       );
     }
     if (ready.unregistered) {

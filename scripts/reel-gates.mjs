@@ -180,8 +180,15 @@ const BEAT_PROSE_WORDS = config.gates.prose;
 const LINE_WORDS = config.gates.line;
 /** A kicker is a label. Past this it is a headline. */
 const KICKER_WORDS = config.gates.kicker;
-/** A row label is a food, a nutrient, a place. Past this it is a claim. */
-const ROW_LABEL_CHARS = 34;
+/**
+ * A row label names a thing — a food, a place, a document. Past this it is a
+ * claim rather than a row.
+ *
+ * It was typed here as a literal 34 while `gates.tableLabel` was documented in
+ * CONFIG.md and defaulted in project.mjs, so the config field was dead: a
+ * project could set it to anything and the check never moved. Found on Papyr.
+ */
+const ROW_LABEL_CHARS = config.gates.tableLabel;
 
 /** Does this string carry a measurement? A right column has to. */
 const isNumeric = (s) => /\d/.test(s ?? "");

@@ -58,7 +58,7 @@ export default {
 
 | field | |
 |---|---|
-| `brand.wordmark` | The word the wordmark elements draw. **Unset it prints a visible defect**, not nothing — a placeholder that renders cleanly is how a post ships with the generator's leftovers on it. |
+| `brand.wordmark` | The word the wordmark elements draw. **Unset it prints a visible defect**, not nothing — a placeholder that renders cleanly is how a post ships with the generator's leftovers on it. Written as the product writes it; the elements uppercase it themselves. |
 | `palettes.{light,dark}` | The four inks, both modes, all four required. The names are semantic: `paper` is whatever the page is, `ink` is whatever the type is. A dark-first project swaps the values, never the names. A missing ink is refused at bundle time, because CSS reads `undefined` as "inherit" and the frame comes out subtly wrong rather than loudly broken. |
 | `mono` | A CSS font stack. Numbers live in it, so it must be monospaced. Referenced by name, never bundled. |
 | `hairline` | Rule weight in canvas pixels. Every rule in the system derives from this one number. |
@@ -67,7 +67,33 @@ Pull the colours from the real product — the app, the site, the logo. A palett
 invented for the videos is a second brand, and the account then argues with the
 thing it is advertising.
 
+**Four inks and no accent.** This is the honest limit of the theme channel, and
+it bit on the first project outside the one the engine was written in: Papyr's
+brand is a *tint* — Emerald-Teal, locked in its own design-system file and
+carried on every surface it ships — and there is nowhere here to put it, so its
+reels are Papyr's shape in nobody's colour. A fifth ink is not the fix. The
+twenty core elements each decide their own ink per part, so an accent that
+nothing reads is worse than none; making the bank accent-aware is a pass over
+every element, and it should be judged as that job, not smuggled in as a
+setting.
+
+A dark-first product is already handled and needs no special case: fill both
+palettes and set `"theme": "dark"` on the post. `light` is still required —
+`bg: "ink"` inverts against the *other* palette, so an absent one makes the
+turn beat a no-op rather than an error.
+
 ## voice
+
+> **NOT WIRED — as of 2026-08-14 nothing reads this block.** `scripts/tts.mjs`
+> has its own `DEFAULT_VOICE` and `render-reel.mjs` passes only the POST's
+> `reel.voice` over it, so a project that names a cloned `sample` here ships in
+> the endpoint's default voice and is told nothing. `backend: "lambda"` is
+> likewise documented and unimplemented; there is one path and it is RunPod.
+> Found on Papyr. It is not a one-line fix: `tts.mjs` keys its audio cache on
+> the voice object, so merging this block re-keys every cached line in every
+> project and a cache miss is a paid call per sentence. It needs a cache
+> migration, which is a decision rather than a patch. Until then, set the voice
+> per post in the spec's `reel.voice`.
 
 `backend` picks the Chatterbox endpoint. `sample` is the reference voice cloned
 per line — the filename in the worker image minus `-sample.wav`. The four
@@ -78,6 +104,16 @@ them per beat in its own `voice` block.
 
 Constants the audits enforce. All of them refuse **before the first TTS call**,
 because all of these failures are only visible after the render is paid for.
+
+> **Every default in this block is one account's measurement.** 30/40 s, 12
+> words of prose, 7 on a line, 5 in a kicker, 34 characters in a row label,
+> 5.2 pt on a tier chip — all of them were measured on Tally's 41 reels, and
+> `scripts/project.mjs` ships them as the engine's defaults. So a project that
+> writes nothing inherits somebody else's numbers **silently**, which reads as
+> "the engine says 40 seconds" rather than "Tally measured 40 seconds". Until
+> the per-project half of this moves to Attribura: if you keep a number, say in
+> the config that you kept it and that it is not yours; if you change one, say
+> what you measured.
 
 | field | what it protects |
 |---|---|

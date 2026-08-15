@@ -12,10 +12,27 @@
 // Both keyed on text + voice settings; editing one sentence re-speaks one
 // sentence. Same contract as the rembg cutouts.
 //
-// Keys in tools/store-shots/.env (gitignored, never in the repo):
+// Keys in <project>/.env (gitignored, beside reel.config.mjs, never committed):
 //   RUNPOD_API_KEY=…
 //   RUNPOD_ENDPOINT_ID=…
 //
+// KNOWN GAP, LEFT UNFIXED ON PURPOSE — `config.voice` IS DEAD.
+//
+// CONFIG.md documents voice.{backend, sample, language, exaggeration,
+// cfg_weight, temperature} as "the defaults every beat inherits", and
+// project.mjs defaults them. Nothing reads them: DEFAULT_VOICE below is the
+// only base, render-reel.mjs passes only the POST's `reel.voice` over it, and
+// `voice.sample` — the cloned reference, the one field that decides who is
+// speaking — never reaches the endpoint at all. A project that sets a sample
+// ships in the endpoint's default voice and is told nothing. `backend:
+// "lambda"` is likewise documented and unimplemented; there is one path here
+// and it is RunPod.
+//
+// It is not fixed here because the fix is not one line. `hashOf` keys the
+// audio cache on the voice object, so merging config.voice in re-keys every
+// cached line in every existing project — and a cache miss is a paid RunPod
+// call per sentence. Wiring it needs a cache migration (or a deliberate
+// re-bill), which is a decision, not a patch. Found on Papyr, 2026-08-14.
 // --mock speaks through macOS `say` — a draft voice to judge the cut,
 // never the ship voice. Mock caches never mix with the real ones.
 
@@ -111,10 +128,9 @@ const runpodGenerate = async (text, voice) => {
   const endpoint = env.RUNPOD_ENDPOINT_ID;
   if (!key || !endpoint) {
     throw new Error(
-      "RUNPOD_API_KEY / RUNPOD_ENDPOINT_ID missing from tools/store-shots/.env.\n" +
-        "They live on the server: ssh root@203.0.113.10 " +
-        "\"grep -E '^RUNPOD_(API_KEY|ENDPOINT_ID)=' /opt/your-api/.env\"\n" +
-        "Or render a draft with --mock (macOS voice).",
+      "RUNPOD_API_KEY / RUNPOD_ENDPOINT_ID missing from <project>/.env " +
+        "(gitignored, beside reel.config.mjs).\n" +
+        "Or render a draft with --mock (macOS voice, no network, no cost).",
     );
   }
   const headers = {

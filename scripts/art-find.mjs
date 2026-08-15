@@ -32,7 +32,7 @@ if (existsSync(envFile)) {
 const UNSPLASH_KEY = process.env.UNSPLASH_ACCESS_KEY || env.UNSPLASH_ACCESS_KEY;
 const PEXELS_KEY = process.env.PEXELS_API_KEY || env.PEXELS_API_KEY;
 if (!UNSPLASH_KEY && !PEXELS_KEY) {
-  console.error("no API key — put UNSPLASH_ACCESS_KEY and/or PEXELS_API_KEY in tools/store-shots/.env");
+  console.error("no API key — put UNSPLASH_ACCESS_KEY and/or PEXELS_API_KEY in <project>/.env");
   process.exit(1);
 }
 

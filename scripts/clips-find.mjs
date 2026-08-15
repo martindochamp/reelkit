@@ -37,7 +37,7 @@ if (existsSync(envFile)) {
   }
 }
 if (!env.GIPHY_API_KEY) {
-  console.error("GIPHY_API_KEY missing from tools/store-shots/.env");
+  console.error("GIPHY_API_KEY missing from <project>/.env");
   process.exit(1);
 }
 
@@ -142,7 +142,7 @@ console.log(
     `Promote one: mv posts/clips/_candidates/<file> posts/clips/<name>.gif\n` +
     `AND paste its LICENSE row into posts/clips/LICENSES.md — a clip with no\n` +
     `row in the register is an untraceable third-party asset in an ad.\n` +
-    `Cheaper first: npm run clips:make "<a still in posts/art/>" animates a\n` +
+    `Cheaper first: reelkit clips:make "<a still in posts/art/>" animates a\n` +
     `specimen we already license, and the provenance is already written.\n` +
     `Then in a beat: { "type": "clip", "file": "<name>.gif", "cols": 72, … }`,
 );

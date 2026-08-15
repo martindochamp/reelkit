@@ -6,7 +6,8 @@
 //   reelkit slides <post>         render the slideshow
 //   reelkit cover <post>          render the grid cover
 //   reelkit lab <element>         preview one element, alone
-//   reelkit gates <post>          the audits, no render, no TTS call
+//   reelkit audit <post>          the writing audits, no render, no TTS call
+//   reelkit gates [word]          the comment-keyword registry
 //   reelkit elements              the merged element bank
 //
 // Every command resolves the project by walking up from the working directory
@@ -20,8 +21,26 @@ import { fileURLToPath } from "node:url";
 const kitDir = path.dirname(fileURLToPath(import.meta.url));
 
 /** command → the script that answers it. */
+/**
+ * Commands whose script always receives an extra flag.
+ *
+ * `audit` exists because `gates` did not mean what this file's own header
+ * said it meant. The header documented `reelkit gates <post>` as "the audits,
+ * no render, no TTS call" and README's start-a-project list said the same at
+ * step 4 — but `gates` dispatches to gates.mjs, the comment-KEYWORD registry,
+ * which reads a post name as a keyword query, prints "SITTING-STILL — free."
+ * and exits 0. A writer following the README got a green light with no audit
+ * having run, which is the exact failure shape this codebase keeps warning
+ * about: the placeholder that renders cleanly.
+ *
+ * Found on Papyr, the first non-Tally project — in Tally the audits are
+ * `npm run reel <post> -- --gates` and nobody used the CLI's name for them.
+ */
+const ALWAYS = { audit: ["--gates"] };
+
 const COMMANDS = {
   reel: "render-reel.mjs",
+  audit: "render-reel.mjs",
   slides: "render-slides.mjs",
   cover: "render-cover.mjs",
   lab: "lab.mjs",
@@ -82,7 +101,7 @@ if (!script) {
 
 const child = spawn(
   process.execPath,
-  [path.join(kitDir, "scripts", script), ...rest],
+  [path.join(kitDir, "scripts", script), ...rest, ...(ALWAYS[command] ?? [])],
   { stdio: "inherit" },
 );
 child.on("exit", (code) => process.exit(code ?? 0));

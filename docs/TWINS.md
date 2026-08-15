@@ -24,24 +24,29 @@ src/ReelElements.tsx      src/lab/reveal.ts        scripts/render-slides.mjs
 src/Slides.tsx            src/lab/reveals.tsx      scripts/render-cover.mjs
 src/Cover.tsx             src/lab/tier-fit.mjs     scripts/reel-gates.mjs
 src/Flags.tsx             src/cover-fit.mjs        scripts/gates.mjs
-src/AsciiClip.tsx                                  scripts/tts.mjs
-                                                   scripts/sfx.mjs
+src/AsciiClip.tsx                                  scripts/sfx.mjs
                                                    scripts/sfx-elements.mjs
-                                                   scripts/sfx-import.mjs
                                                    scripts/sfx-audit.mjs
                                                    scripts/img2ascii.mjs
                                                    scripts/ascii-clip.mjs
                                                    scripts/ascii-score.mjs
-                                                   scripts/art-find.mjs
-                                                   scripts/art-batch.mjs
                                                    scripts/brand-guard.mjs
-                                                   scripts/clips-find.mjs
                                                    scripts/clips-make.mjs
                                                    scripts/mockup-alpha.mjs
-                                                   scripts/build-demo.mjs
                                                    scripts/stage.mjs
-                                                   scripts/tier-legibility.mjs
 ```
+
+### One of these is a bug Tally also has
+
+`scripts/sfx-import.mjs` ran its whole CLI body at **import time**, and three
+modules import it (`render-reel.mjs`, `sfx.mjs`, `sfx-audit.mjs`). With no
+`posts/sfx/sourced.json` it calls `process.exit(1)` on the import, so
+`reelkit reel` — or `npm run reel` — dies before reading a beat. Tally never
+saw it because its register has existed for months; Papyr, scaffolded by
+`reelkit init`, hit it on the first render. Fixed here by guarding the body
+behind an entry-point check (phase 2, 2026-08-14). **The same latent bug is
+still in `tally/tools/store-shots/scripts/sfx-import.mjs`** and will surface
+there the day anyone deletes or renames that register.
 
 ## Divergent, and why
 
@@ -54,7 +59,11 @@ src/AsciiClip.tsx                                  scripts/tts.mjs
 | `scripts/stage.mjs` | paths come from `project.mjs`; the screenshot capture directory is config, not `../../fastlane`. |
 | `scripts/reel-gates.mjs` | six constants read from `config.gates`. The arithmetic is untouched. |
 | `scripts/render-*.mjs` | `bundle()` → `bundleProject()`, one line each. |
-| `scripts/render-cover.mjs` | `--posted` refuses instead of asking a ledger this repo does not have. |
+| `scripts/render-cover.mjs` | `--posted` refuses instead of asking a ledger this repo does not have. **Phase 2:** the proof sheet's five hexes were Tally's palette, hardcoded — now the project's. |
+| `scripts/tier-legibility.mjs` | **Phase 2:** the legibility floor comes from `gates.tierFloorPt`. `src/lab/tier-fit.mjs` keeps the hardcoded 5.2 pt because it is bundled and cannot read a config. |
+| `scripts/sfx-import.mjs` | **Phase 2:** the CLI body is behind an entry-point guard (above). |
+| `scripts/build-demo.mjs` | **Phase 2:** the `thermal` demo's wordmark comes from `theme.brand.wordmark` instead of the literal `"Tally"`. |
+| `scripts/tts.mjs`, `scripts/art-find.mjs`, `scripts/clips-find.mjs`, `scripts/art-batch.mjs` | **Phase 2:** error messages pointed at `tools/store-shots/.env` and at a VPS `ssh` line; the Openverse User-Agent said `tally-store-shots`. All now project-relative. No behaviour change. |
 
 ## Not here at all
 
@@ -78,3 +87,8 @@ built.
 Tally's own stored artifacts are NOT a reference — several predate the
 2026-08-11 pass and differ from what its current source produces. Render the
 reference fresh, into a copy, and never into Tally's `out/`.
+
+**Re-run 2026-08-14 after the phase-2 changes above** (`reelkit reel
+serving-tier -- --long --loose`, cached voice, no TTS call): the decoded video
+stream and the decoded audio stream are both **byte-identical** to the fork
+reference. Parity holds.

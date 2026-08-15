@@ -21,6 +21,7 @@ import path from "node:path";
 import { bundleProject } from "./bundle.mjs";
 import { renderStill, selectComposition } from "@remotion/renderer";
 import sharp from "sharp";
+import { config } from "./project.mjs";
 import { projectDir, postsDir } from "./stage.mjs";
 import { glyphInk, imageToAscii } from "./img2ascii.mjs";
 import {
@@ -407,9 +408,28 @@ const svgLabel = (text, w, h, size, color) =>
  * TILE_ACUITY_PX in cover-fit.mjs for the arithmetic and its assumptions.
  */
 const proofSheet = async (coverPng, out, name, theme) => {
-  const ink = theme === "dark" ? "#EDEBE3" : "#1B1A17";
-  const faded = "#8B8679";
-  const bg = theme === "dark" ? "#151412" : "#F7F6F1";
+  // The sheet is drawn in the PROJECT's ink, not in the ink of the account
+  // this file was forked from. These were the literals #EDEBE3 / #1B1A17 /
+  // #8B8679 / #151412 / #F7F6F1 — Tally's palette, hardcoded — so every other
+  // project's legibility proof came back on the wrong paper, which is exactly
+  // the judgement a proof sheet exists to support, made wrong. Found on Papyr,
+  // whose paper is pure black. (Everything else in this file already paints
+  // through the bundled theme; only this SVG-composited sheet did not, because
+  // sharp cannot reach `reelkit-theme`.)
+  //
+  // The unthemed fallback mirrors src/theme.default.ts, which this file
+  // cannot import (TypeScript, from a plain .mjs) — the same mirrored-constant
+  // arrangement as tier-fit.mjs and sfx-elements.mjs, and it is deliberately
+  // the placeholder grey rather than anybody's brand.
+  const mode = theme === "dark" ? "dark" : "light";
+  const palette =
+    config.theme?.palettes?.[mode] ??
+    (mode === "dark"
+      ? { paper: "#121214", ink: "#EDEDF0", faded: "#86868B" }
+      : { paper: "#FAFAFA", ink: "#17171A", faded: "#86868B" });
+  const ink = palette.ink;
+  const faded = palette.faded;
+  const bg = palette.paper;
 
   const M = 40;
   const HEAD = 64;

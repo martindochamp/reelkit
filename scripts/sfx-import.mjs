@@ -26,6 +26,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { projectDir } from "./stage.mjs";
 
 const sfxDir = path.join(projectDir, "posts", "sfx");
@@ -188,57 +189,85 @@ const seconds = (file) =>
   );
 
 // ---------------------------------------------------------------------------
+// The CLI, and why it is behind a guard.
+//
+// This file is TWO things: the `sfx:import` command, and the module
+// render-reel.mjs / sfx.mjs / sfx-audit.mjs read `sourcedReady` and
+// `readRegister` out of. Everything below used to run at TOP LEVEL, so
+// importing it ran the command — including its `process.exit(1)` when there is
+// no register.
+//
+// In the project this was forked from that never fired: posts/sfx/sourced.json
+// had existed for months. In a project scaffolded by `reelkit init` it fires
+// immediately, because init makes posts/sfx/ and nothing in it — so the very
+// first `reelkit reel` in a new project died with "no register at …/sourced.json"
+// before it had read a single beat, and `--gates`, which is documented as
+// touching nothing, died the same way. Found on Papyr, the first non-Tally
+// consumer.
+//
+// A module that is also a script guards its body. Nothing else changes.
 
-const rows = readRegister();
-if (!rows.length) {
-  console.error(`no register at ${registerFile}`);
-  process.exit(1);
-}
+const isEntryPoint =
+  process.argv[1] != null &&
+  pathToFileURL(process.argv[1]).href === import.meta.url;
 
-if (process.argv.includes("--list")) {
-  for (const row of rows) {
-    const out = path.join(outDir, `${row.name}.wav`);
-    const state = !existsSync(out)
-      ? "not imported"
-      : !row.source || !row.license
-        ? "IMPORTED — no source/license row, cannot ship"
-        : "ready";
-    console.log(`${row.name.padEnd(11)} ${state.padEnd(38)} ${row.what ?? ""}`);
+if (isEntryPoint) {
+  const rows = readRegister();
+  if (!rows.length) {
+    console.error(
+      `no register at ${registerFile}\n` +
+        `Sourced sound is opt-in: describe each download there (name, file, ` +
+        `source, license) and re-run. The synthesized kit needs none of this — ` +
+        `\`reelkit sfx\`.`,
+    );
+    process.exit(1);
   }
-  process.exit(0);
-}
 
-const done = [];
-for (const row of rows) done.push(importOne(row));
-
-for (const r of done) {
-  if (r.missing) {
-    console.log(`SKIP  ${r.name.padEnd(11)} ${r.missing} not in posts/sfx/_incoming/`);
-    continue;
+  if (process.argv.includes("--list")) {
+    for (const row of rows) {
+      const out = path.join(outDir, `${row.name}.wav`);
+      const state = !existsSync(out)
+        ? "not imported"
+        : !row.source || !row.license
+          ? "IMPORTED — no source/license row, cannot ship"
+          : "ready";
+      console.log(`${row.name.padEnd(11)} ${state.padEnd(38)} ${row.what ?? ""}`);
+    }
+    process.exit(0);
   }
-  const file = path.join(outDir, `${r.name}.wav`);
-  const d = seconds(file);
-  console.log(
-    `SFX   ${r.name.padEnd(11)} ${d.toFixed(2)}s  ` +
-      (r.bed
-        ? `bed, ${SFX_LUFS} LUFS integrated`
-        : `${r.measured?.toFixed(1) ?? "?"} → ${SFX_LUFS} LUFS momentary (${r.gain.toFixed(1)} dB)`) +
-      `, peak ${r.peak?.toFixed(1) ?? "?"} dBFS`,
-  );
+
+  const done = [];
+  for (const row of rows) done.push(importOne(row));
+
+  for (const r of done) {
+    if (r.missing) {
+      console.log(`SKIP  ${r.name.padEnd(11)} ${r.missing} not in posts/sfx/_incoming/`);
+      continue;
+    }
+    const file = path.join(outDir, `${r.name}.wav`);
+    const d = seconds(file);
+    console.log(
+      `SFX   ${r.name.padEnd(11)} ${d.toFixed(2)}s  ` +
+        (r.bed
+          ? `bed, ${SFX_LUFS} LUFS integrated`
+          : `${r.measured?.toFixed(1) ?? "?"} → ${SFX_LUFS} LUFS momentary (${r.gain.toFixed(1)} dB)`) +
+        `, peak ${r.peak?.toFixed(1) ?? "?"} dBFS`,
+    );
+  }
+
+  const naked = rows.filter((r) => !r.source || !r.license);
+  writeRegisterDoc(rows);
+  if (naked.length) {
+    console.log(
+      `\n${naked.length} of ${rows.length} rows have no source/license: ` +
+        `${naked.map((r) => r.name).join(", ")}.\n` +
+        `They are imported and auditionable, and a reel that USES one will ` +
+        `refuse to render until posts/sfx/sourced.json says where it came from.`,
+    );
+  }
 }
 
-const naked = rows.filter((r) => !r.source || !r.license);
-writeRegisterDoc();
-if (naked.length) {
-  console.log(
-    `\n${naked.length} of ${rows.length} rows have no source/license: ` +
-      `${naked.map((r) => r.name).join(", ")}.\n` +
-      `They are imported and auditionable, and a reel that USES one will ` +
-      `refuse to render until posts/sfx/sourced.json says where it came from.`,
-  );
-}
-
-function writeRegisterDoc() {
+function writeRegisterDoc(rows) {
   const body = rows
     .map((r) => {
       const out = path.join(outDir, `${r.name}.wav`);
@@ -256,7 +285,7 @@ function writeRegisterDoc() {
     path.join(outDir, "LICENSES.md"),
     `# posts/sfx/sourced — downloaded sound
 
-Generated by \`npm run sfx:import\` from \`posts/sfx/sourced.json\`. Edit
+Generated by \`reelkit sfx:import\` from \`posts/sfx/sourced.json\`. Edit
 the JSON, not this file.
 
 Unlike the synthesized kit one directory up — where the ffmpeg recipe IS

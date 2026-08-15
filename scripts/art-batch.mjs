@@ -251,7 +251,7 @@ const findOpenverse = async (query, count) => {
   const res = await grab(
     `https://api.openverse.org/v1/images/?q=${encodeURIComponent(query)}` +
       `&license=cc0,pdm&page_size=${count}&mature=false`,
-    { headers: { "User-Agent": "tally-store-shots/0.1 (personal use)" } },
+    { headers: { "User-Agent": "reelkit/0.1 (personal use)" } },
   );
   if (!res.ok) {
     console.error(`  openverse "${query}" ${res.status}`);
@@ -648,7 +648,7 @@ async function sweep() {
     console.log(`\nCOLLISIONS  already in posts/art/, not touched: ${collisions.join(", ")}`);
   console.log(
     "\nRead the shortlists, pick with your eye, then:\n" +
-      "  npm run art:batch -- --promote <slug> --pick <n>",
+      "  reelkit art:batch --promote <slug> --pick <n>",
   );
 }
 

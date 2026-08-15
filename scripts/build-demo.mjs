@@ -29,6 +29,7 @@
 
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { config } from "./project.mjs";
 import { postsDir } from "./stage.mjs";
 
 /** Order to show them in: our own first, then the lab, ending on the ask. */
@@ -116,7 +117,13 @@ const WRITTEN = {
       type: "lab", element: "thermal",
       props: {
         lines: [
-          { kind: "wordmark", text: "Tally" },
+          // The demo sheet prints the READER's wordmark, not the wordmark of
+          // the account this file was forked from — it was the literal
+          // "Tally", so every project's reference sheet advertised somebody
+          // else. `thermal` is the one element that takes a wordmark as DATA
+          // rather than reading tokens.wordmark(), so nothing else in the bank
+          // had this problem and nothing caught it. Found on Papyr.
+          { kind: "wordmark", text: config.theme?.brand?.wordmark ?? "SET brand.wordmark" },
           { kind: "meta", text: "Day receipt — N° 214" },
           { kind: "rule" },
           { kind: "row", left: "Protein", right: "184 g" },
@@ -239,7 +246,7 @@ const post = {
   brief: {
     topic: "_demo",
     mechanic: "the bank, in order, at reel scale, with the sound on it",
-    DO_NOT_SHIP: "a reference sheet, not a post — regenerate with npm run demo:build",
+    DO_NOT_SHIP: "a reference sheet, not a post — regenerate with `reelkit demo`",
   },
   reel: { captions: "page", sfx: true, roomtone: true, beats },
 };
@@ -256,4 +263,4 @@ console.log(
     `${beats.filter((b) => !b._from?.startsWith("written")).length} harvested`,
 );
 if (missing.length) console.log(`SKIP  no props anywhere for: ${missing.join(", ")}`);
-console.log(`      posts/_demo.json → npm run reel _demo`);
+console.log(`      posts/_demo.json → reelkit reel _demo`);

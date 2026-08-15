@@ -45,8 +45,13 @@ Then, in order:
    product; a palette invented for the videos is a second brand.
 2. `npx reelkit elements` — what the bank already draws.
 3. `posts/<name>.json` — the first spec. Grammar: [docs/REELS.md](docs/REELS.md).
-4. `npx reelkit gates <name>` — the audits, before any voice is billed.
-5. `npx reelkit reel <name>`.
+4. `npx reelkit audit <name>` — the writing audits, before any voice is billed.
+5. `npx reelkit reel <name> -- --mock` — the draft voice, no network, no cost.
+6. `npx reelkit reel <name>`.
+
+`gates` is a different command: it is the comment-keyword registry, and it
+reads its argument as a keyword. Step 4 used to point at it, so a post name
+came back "SITTING-STILL — free." and exited 0 with no audit having run.
 
 ## Commands
 
@@ -57,7 +62,8 @@ reelkit reel <post>             render the reel
 reelkit slides <post>           render the slideshow
 reelkit cover <post>            render the grid cover
 reelkit lab <element>           preview one element, alone, in your ink
-reelkit gates [word]            the keyword registry
+reelkit audit <post>            the writing audits — no voice, no render
+reelkit gates [word]            the comment-keyword registry
 reelkit sfx                     synthesize the sound kit, print its levels
 reelkit ascii <image>           judge an ASCII conversion before promoting it
 reelkit art:find "<query>"      sweep for a specimen

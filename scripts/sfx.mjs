@@ -544,7 +544,7 @@ const resolve = (name, { preferSynth = false } = {}) => {
   if (!sourced && !KIT[name] && FALLBACK[name]) {
     console.log(
       `SUB    sfx "${name}" is not imported — falling back to the ` +
-        `synthesized "${FALLBACK[name]}". Run npm run sfx:import.`,
+        `synthesized "${FALLBACK[name]}". Run \`reelkit sfx:import\`.`,
     );
     return resolve(FALLBACK[name], { preferSynth });
   }
@@ -724,7 +724,7 @@ synthesized**: ffmpeg's own oscillators (\`aevalsrc\`) and noise generator
 sample pack, no library, no download. Nothing in this directory is a
 derivative of anyone's work.
 
-The recipes are in \`scripts/sfx.mjs\` (\`KIT\`) and \`npm run sfx\`
+The recipes are in \`reelkit/scripts/sfx.mjs\` (\`KIT\`) and \`reelkit sfx\`
 regenerates every file from them — which is why the wavs are gitignored
 and this register is not. **The recipe is the provenance.**
 
