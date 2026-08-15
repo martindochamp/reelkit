@@ -154,8 +154,8 @@ The tables already exist. The mapping:
 | the keyword registry | `dm_rules.keyword`, unique per org |
 | drop page + QR | `/library` on the phone |
 
-`posts/ledger.json`, the SQLite service on `203.0.113.10:3007`, the phone
-board page and the drop pages all retire. The one capability worth keeping
+`posts/ledger.json`, the standalone SQLite board service, the phone board page
+and the drop pages all retire. The one capability worth keeping
 from the drop chain is the **QR handoff** (Mac renders, phone publishes) —
 it becomes a QR on the `/library` detail view.
 

@@ -110,10 +110,12 @@ few clear shapes out of a busy photo; applies after cutout, before trim).
 What converts well: **one subject, isolated on white or transparent** — the
 paper is the background. Dead margin is auto-cropped. Full-bleed textures
 come out as a wall of noise; don't ship them. A busy background is not a
-dead end: `cutout: true` runs the photo through the example rembg
-endpoint (`bg.example.com/api/v1/icons/remove-bg`) and caches the
+dead end: `cutout: true` runs the photo through a rembg service **you host**
+(set `BG_REMOVAL_API_URL` in `<project>/.env`; it must answer
+`POST /api/v1/icons/remove-bg` with `{image: <base64>}`) and caches the
 transparent result next to the source as `<name>.cutout.png` (gitignored,
-regenerable) — one network call per image, ever. Pale subjects on paper keep
+regenerable) — one network call per image, ever. Unset, the flag refuses and
+says so; every other slide type renders without it. Pale subjects on paper keep
 only their edges; pair `gamma` ≈ 0.7 with `contrast` ≈ 1.8 to ink the
 interiors without flattening them.
 

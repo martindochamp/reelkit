@@ -924,11 +924,10 @@ RUNPOD_API_KEY=…
 RUNPOD_ENDPOINT_ID=…
 ```
 
-They live on the server — from the repo root:
-
-```
-ssh root@203.0.113.10 "grep -E '^RUNPOD_(API_KEY|ENDPOINT_ID)=' /opt/your-api/.env" >> tools/store-shots/.env
-```
+Both come from your own RunPod account: the API key from the console, the
+endpoint id from the Chatterbox serverless endpoint you deploy. Put them in
+`<project>/.env`, which `reelkit init` gitignores. Nothing here ships a shared
+endpoint — the voice is billed per call, so it is yours.
 
 Audio caches per line under `posts/audio/<post>/` (gitignored), keyed on
 text + voice settings — editing one beat re-speaks one beat. `voice`

@@ -17,17 +17,32 @@
 import { existsSync, writeFileSync } from "node:fs";
 import sharp from "sharp";
 
-// The example rembg sidecar (u2net). Decodes PNG/WebP only; nginx caps
-// the body around 1 MB — sources are normalised to a ≤768 px PNG before the
-// call. The result is cached next to the source as <name>.cutout.png, so the
-// network is hit once per image, ever, and renders stay reproducible offline.
-const REMOVE_BG_URL = `${
-  process.env.BG_REMOVAL_API_URL || "https://bg.example.com"
-}/api/v1/icons/remove-bg`;
+// Background removal runs on a rembg sidecar (u2net) that YOU host — there is
+// deliberately no default host here, because a default would send every user of
+// this package to one person's box. `cutout: true` needs BG_REMOVAL_API_URL and
+// says so when it is unset; every other slide type works without it.
+//
+// The service takes {image: base64, mime_type} on POST and answers {image}.
+// It decodes PNG/WebP only, and proxies in front of it usually cap the body
+// around 1 MB, so sources are normalised to a ≤768 px PNG before the call. The
+// result is cached next to the source as <name>.cutout.png, so the network is
+// hit once per image, ever, and renders stay reproducible offline.
+const BG_REMOVAL_API_URL = process.env.BG_REMOVAL_API_URL?.replace(/\/+$/, "");
+const REMOVE_BG_URL = BG_REMOVAL_API_URL
+  ? `${BG_REMOVAL_API_URL}/api/v1/icons/remove-bg`
+  : null;
 
 export async function cutoutFile(file) {
   const cached = file.replace(/\.[^.]+$/, "") + ".cutout.png";
   if (existsSync(cached)) return cached;
+  if (!REMOVE_BG_URL) {
+    throw new Error(
+      `cutout needs a background-removal service: set BG_REMOVAL_API_URL in ` +
+        `<project>/.env to a host that answers POST /api/v1/icons/remove-bg ` +
+        `with {image: <base64>}. Or drop \`cutout: true\` from the slide — ` +
+        `everything else renders without it.`,
+    );
+  }
   let png;
   for (const edge of [768, 640, 512, 400]) {
     png = await sharp(file)
