@@ -107,21 +107,29 @@ turn beat a no-op rather than an error.
 
 ## voice
 
-> **NOT WIRED — as of 2026-08-14 nothing reads this block.** `scripts/tts.mjs`
-> has its own `DEFAULT_VOICE` and `render-reel.mjs` passes only the POST's
-> `reel.voice` over it, so a project that names a cloned `sample` here ships in
-> the endpoint's default voice and is told nothing. `backend: "lambda"` is
-> likewise documented and unimplemented; there is one path and it is RunPod.
-> Found on Papyr. It is not a one-line fix: `tts.mjs` keys its audio cache on
-> the voice object, so merging this block re-keys every cached line in every
-> project and a cache miss is a paid call per sentence. It needs a cache
-> migration, which is a decision rather than a patch. Until then, set the voice
-> per post in the spec's `reel.voice`.
+**Wired as of 2026-09-13** (`scripts/tts.mjs`, `resolveVoice`). Precedence,
+highest first: a beat's own `voice` > the post's `reel.voice` > this block >
+`DEFAULT_VOICE` (`tts.mjs`) as the last resort. A project that sets nothing
+here resolves to plain `DEFAULT_VOICE` — unset stays unset, so a project that
+never named a sample sees no change and its audio cache keeps hitting.
 
-`backend` picks the Chatterbox endpoint. `sample` is the reference voice cloned
-per line — the filename in the worker image minus `-sample.wav`. The four
-generation parameters are the defaults every beat inherits; a post overrides
-them per beat in its own `voice` block.
+`backend` picks the Chatterbox endpoint — today that is a name check, not a
+switch: only `"runpod"` has a code path, and anything else (`"lambda"`
+included, still documented and still unbuilt) makes `resolveVoice` refuse by
+name rather than silently rendering through RunPod. `sample` is the reference
+voice cloned per line — the filename in the worker image minus
+`-sample.wav` — and it is the one field whose name changes shape: this block
+calls it `sample`, but `resolveVoice` carries it into the `voice` field, which
+is what the endpoint payload and a post's own `reel.voice`/beat `voice` call it
+(`"voice": "tiktok-male"`, REELS.md). The four generation parameters are the
+defaults every beat inherits; a post overrides them per beat in its own
+`voice` block, and a beat can override them again in its own.
+
+Naming a `sample` (or changing any of the four generation parameters) here
+re-keys the audio cache for every line in THIS project that does not already
+pin its own voice at the post or beat level — a cache miss is a paid RunPod
+call per sentence, so treat a first `sample` the way a first `--revoice` is
+treated: deliberate, not incidental.
 
 ## gates
 

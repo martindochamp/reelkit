@@ -16,23 +16,19 @@
 //   RUNPOD_API_KEY=…
 //   RUNPOD_ENDPOINT_ID=…
 //
-// KNOWN GAP, LEFT UNFIXED ON PURPOSE — `config.voice` IS DEAD.
-//
-// CONFIG.md documents voice.{backend, sample, language, exaggeration,
-// cfg_weight, temperature} as "the defaults every beat inherits", and
-// project.mjs defaults them. Nothing reads them: DEFAULT_VOICE below is the
-// only base, render-reel.mjs passes only the POST's `reel.voice` over it, and
-// `voice.sample` — the cloned reference, the one field that decides who is
-// speaking — never reaches the endpoint at all. A project that sets a sample
-// ships in the endpoint's default voice and is told nothing. `backend:
-// "lambda"` is likewise documented and unimplemented; there is one path here
-// and it is RunPod.
-//
-// It is not fixed here because the fix is not one line. `hashOf` keys the
-// audio cache on the voice object, so merging config.voice in re-keys every
-// cached line in every existing project — and a cache miss is a paid RunPod
-// call per sentence. Wiring it needs a cache migration (or a deliberate
-// re-bill), which is a decision, not a patch. Found on Papyr, 2026-08-14.
+// `resolveVoice` is the one place the project's config.voice, the post's
+// `reel.voice` and a beat's own `voice` are reconciled: beat > post > project
+// > DEFAULT_VOICE below, last resort. CONFIG.md owns the field list; this
+// file owns two things CONFIG.md does not need to: `sample` (what a project
+// author names the cloned reference) becomes `voice` (what the endpoint's
+// payload and a post's own `reel.voice` call it — REELS.md's
+// `"voice": "tiktok-male"`), and `backend` is checked, never carried into the
+// merged object — only "runpod" has a code path, so anything else refuses by
+// name rather than rendering through it unannounced. A project that sets no
+// `sample` resolves to exactly DEFAULT_VOICE, unchanged from before this was
+// wired — so its cache keeps hitting; a project that does set one gets the
+// voice it named, which re-keys only that project's own lines (`hashOf`'s
+// `v` salt versions the cache FORMAT, not this).
 // --mock speaks through macOS `say` — a draft voice to judge the cut,
 // never the ship voice. Mock caches never mix with the real ones.
 
@@ -47,6 +43,7 @@ import {
 import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
+import { config } from "./project.mjs";
 import { projectDir } from "./stage.mjs";
 
 const env = {};
@@ -68,6 +65,60 @@ const DEFAULT_VOICE = {
 
 /** Silence between sentences — a breath, not the model's variable pause. */
 const GAP_MS = 140;
+
+/** The only keys a resolved voice carries — never `backend`. See below. */
+const pickVoice = (v = {}) => {
+  const out = {};
+  if (v.voice != null) out.voice = v.voice;
+  if (v.language != null) out.language = v.language;
+  if (v.exaggeration != null) out.exaggeration = v.exaggeration;
+  if (v.cfg_weight != null) out.cfg_weight = v.cfg_weight;
+  if (v.temperature != null) out.temperature = v.temperature;
+  return out;
+};
+
+/**
+ * Resolve one beat's voice. Precedence, highest first:
+ *
+ *   beat.voice > post reel.voice > project config.voice > DEFAULT_VOICE
+ *
+ * `config.voice.sample` (the noun CONFIG.md documents — "the reference
+ * voice cloned per line") becomes this file's `voice` field, which is what
+ * the endpoint payload and a post's own `reel.voice`/`beat.voice` call it
+ * (REELS.md: `"voice": "tiktok-male"`). A project that leaves `sample` unset
+ * contributes nothing here, so it resolves to plain DEFAULT_VOICE exactly as
+ * before this function existed — unset stays unset, on purpose, so a
+ * project's cache does not re-key itself for a decision it never made.
+ *
+ * `backend` is checked, not merged in: only "runpod" has a code path here,
+ * so anything else — most notably the documented-but-unbuilt "lambda" —
+ * refuses BY NAME rather than silently rendering through RunPod with the
+ * wrong assumptions. It never reaches the returned object (and so never
+ * reaches `hashOf`): the backend is a transport decision, not a property of
+ * the voice that was spoken, and it must not re-key a cache that has nothing
+ * to do with it.
+ */
+export const resolveVoice = (reelVoice = {}, beatVoice = {}) => {
+  const backend =
+    beatVoice.backend ?? reelVoice.backend ?? config.voice.backend ?? "runpod";
+  if (backend !== "runpod") {
+    throw new Error(
+      `voice.backend "${backend}" is documented in CONFIG.md but not ` +
+        `implemented — the only TTS path here is RunPod. Refusing rather ` +
+        `than silently rendering through it.`,
+    );
+  }
+  const fromConfig = {
+    ...pickVoice(config.voice),
+    ...(config.voice.sample != null ? { voice: config.voice.sample } : {}),
+  };
+  return {
+    ...DEFAULT_VOICE,
+    ...fromConfig,
+    ...pickVoice(reelVoice),
+    ...pickVoice(beatVoice),
+  };
+};
 
 // The salt versions the CACHE, not the text: v1 cached whole lines with
 // the worker's own pauses baked in, v3 re-cuts every segment under the

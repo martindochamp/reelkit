@@ -52,7 +52,7 @@ import { config } from "./project.mjs";
 import { postsDir, projectDir } from "./stage.mjs";
 import { presetBank, resolvePresets } from "./presets.mjs";
 import { warnTierList } from "./tier-legibility.mjs";
-import { forget, speak } from "./tts.mjs";
+import { forget, resolveVoice, speak } from "./tts.mjs";
 
 const FPS = 30;
 // The voice never stops. A beat opens on its first syllable and ends a
@@ -1135,11 +1135,15 @@ for (const name of names) {
       );
     }
 
+    // beat.voice > reel.voice > project config.voice > DEFAULT_VOICE —
+    // resolved once here so `--revoice`'s forget() and the real speak()
+    // agree on exactly what they are keying the cache on.
+    const voice = resolveVoice(reel.voice ?? {}, beat.voice ?? {});
     if (revoiceBeats === "all" || revoiceBeats?.has(i + 1)) {
-      const gone = forget(name, i, clean, reel.voice ?? {}, { mock });
+      const gone = forget(name, i, clean, voice, { mock });
       if (gone) console.log(`REVOICE ${name} beat ${i + 1} — dropped ${gone} cached file(s)`);
     }
-    const clip = await speak(name, i, clean, reel.voice ?? {}, { mock });
+    const clip = await speak(name, i, clean, voice, { mock });
     const basename = path.basename(clip.file);
     copyFileSync(clip.file, path.join(publicAudioDir, basename));
 
