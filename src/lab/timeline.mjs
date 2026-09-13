@@ -61,6 +61,49 @@ export const parseAnchor = (a, fps = 30) => {
 const ownerOf = (name) => String(name).split(".")[0];
 
 /**
+ * The edges that exist before any element is placed: the reel's own bounds,
+ * each beat, each cut, and each SENTENCE.
+ *
+ * Sentences are numbered across the whole reel — `s1`, `s2`, … — not per
+ * beat, because "insert a sentence between A and B" has to mean something
+ * globally. Their edges come from what `speak()` measured on the assembled
+ * audio (`om`, `dm` per sentence), which is why a sentence edge is solid.
+ *
+ * WORD EDGES ARE NOT PUBLISHED, deliberately. A word's start is interpolated
+ * inside its sentence at the proportion of its characters
+ * (render-reel.mjs ~line 404), so anchoring to one would be anchoring to an
+ * estimate while looking exactly like anchoring to a measurement. They come
+ * back the day forced alignment lands — REFERENCES.md gap #7.
+ *
+ * @param {{durationInFrames: number, sentences?: {om: number, dm: number}[]}[]} beats
+ * @returns {Record<string, number>} edge name → frame
+ */
+export const edgesOf = (beats, { fps = 30 } = {}) => {
+  // NOTE for phase 3: render-reel.mjs has its own `msToFrames`, and parity
+  // means rounding the same way it does. Reconcile the two before the
+  // renderer lays out through this rather than after.
+  const ms = (v) => Math.round((v / 1000) * fps);
+  const named = { "reel.start": 0 };
+  let t = 0;
+  let n = 0;
+  beats.forEach((b, i) => {
+    named[`beat${i + 1}.start`] = t;
+    named[`beat${i + 1}.end`] = t + b.durationInFrames;
+    // The cut INTO this beat. `cut1` is the top of the reel, which is not a
+    // cut anyone can see — it is named so the list has no hole in it.
+    named[`cut${i + 1}`] = t;
+    for (const s of b.sentences ?? []) {
+      n += 1;
+      named[`s${n}.start`] = t + ms(s.om);
+      named[`s${n}.end`] = t + ms(s.om + s.dm);
+    }
+    t += b.durationInFrames;
+  });
+  named["reel.end"] = t;
+  return named;
+};
+
+/**
  * Lay every element on the clock.
  *
  * @param {Placed[]} placed

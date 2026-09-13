@@ -18,7 +18,7 @@
 
 import { applyPreset, resolvePresets } from "./presets.mjs";
 import { motionAt, motionEnd, motionStyle, originPx } from "../src/lab/motion.mjs";
-import { layOut, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
+import { edgesOf, layOut, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
 
 let pass = 0, fail = 0;
 const ok = (label, cond, got) => {
@@ -718,6 +718,33 @@ throws("a span AND its own edges is refused as ambiguous",
 throws("a span on something open-ended has no end to borrow",
    () => layOut([{ id: "open", from: { at: "s3.start" } }, { id: "x", span: "open" }], TL_NAMED),
    /no such edge/);
+
+// The edges that exist before anything is placed. Sentence offsets are what
+// `speak()` MEASURED on the assembled audio; word edges are deliberately not
+// published, because a word's start is interpolated inside its sentence and
+// would look exactly like a measurement while being an estimate.
+const TL_BEATS = [
+  { durationInFrames: 30, sentences: [{ om: 0, dm: 1000 }] },
+  { durationInFrames: 60, sentences: [{ om: 0, dm: 900 }, { om: 1040, dm: 800 }] },
+];
+const TL_EDGES = edgesOf(TL_BEATS, { fps: 30 });
+ok("the reel starts at zero and ends past its last beat",
+   TL_EDGES["reel.start"] === 0 && TL_EDGES["reel.end"] === 90);
+ok("a beat publishes both its edges",
+   TL_EDGES["beat1.start"] === 0 && TL_EDGES["beat1.end"] === 30);
+ok("the second beat starts where the first ended",
+   TL_EDGES["beat2.start"] === 30);
+ok("a cut is named for the beat it cuts into", TL_EDGES["cut2"] === 30);
+ok("a sentence edge is its beat's start plus its own measured offset",
+   TL_EDGES["s1.start"] === 0 && TL_EDGES["s1.end"] === 30);
+ok("sentences are numbered ACROSS the reel, not inside a beat",
+   TL_EDGES["s2.start"] === 30 && TL_EDGES["s3.start"] === 61);
+ok("and a sentence carries its own measured length",
+   TL_EDGES["s3.end"] === 85);
+ok("no word edge is published — an estimate must not look like a measurement",
+   Object.keys(TL_EDGES).every((k) => !/^w\d/.test(k)));
+ok("the edges drop straight into the resolver",
+   layOut([{ id: "cap", span: "s2" }], TL_EDGES).cap.length === 27);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
