@@ -1573,9 +1573,12 @@ export const Stage: React.FC<{
   // column at all, which is why the preset sheet looked right and a post
   // did not.
   if (element.type === "footage") {
+    // The motion is handed to `Footage` rather than drawn on the box around
+    // it: only the component knows where its card actually sits, and that is
+    // what an anchor has to be measured against.
     return (
-      <StageBox full motion={element.motion} life={life} centered={false}>
-        <Footage spec={element.spec} />
+      <StageBox full centered={false}>
+        <Footage spec={element.spec} motion={element.motion} life={life} />
       </StageBox>
     );
   }

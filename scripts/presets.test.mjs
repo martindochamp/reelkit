@@ -17,7 +17,7 @@
 // that will not be tested.
 
 import { applyPreset, resolvePresets } from "./presets.mjs";
-import { motionAt, motionEnd, motionStyle } from "../src/lab/motion.mjs";
+import { motionAt, motionEnd, motionStyle, originPx } from "../src/lab/motion.mjs";
 
 let pass = 0, fail = 0;
 const ok = (label, cond, got) => {
@@ -620,6 +620,30 @@ ok("an exit does not count towards it — it ends when the element does",
    motionEnd({ opacity: [1, 0], at: "exit", frames: 8 }) === 0);
 ok("a move inside the beat counts from its own second",
    motionEnd({ y: [0, -60], at: 1.2, frames: 12 }) === 48);
+
+// The anchor a scale grows from. Declared since the first version and drawn
+// by nothing until it was asserted — the same shape of defect as the caption
+// `stroke`, which was typed for weeks and never reached a frame.
+ok("a scale grows from the centre unless told otherwise",
+   motionStyle({ scale: [0.5, 1], frames: 10 }, 5, {}).transformOrigin === "center");
+ok("and from wherever the origin names",
+   motionStyle({ scale: [0.5, 1], frames: 10, origin: "top left" }, 5, {}).transformOrigin === "top left");
+ok("an origin on a translation still rides on the transform",
+   motionStyle({ y: [40, 0], frames: 10, origin: "bottom" }, 5, {}).transformOrigin === "bottom");
+ok("but a spec with no transform writes no origin at all",
+   motionStyle({ opacity: [0, 1], frames: 10, origin: "top left" }, 5, {}).transformOrigin === undefined);
+
+// An anchor has to mean the ELEMENT's corner, not the corner of whatever
+// layer happens to carry the transform. Measured on frames first: `top` on a
+// footage card dragged it toward the top of the screen instead of growing it
+// from its own top edge.
+const ANCHOR_BOX = { left: 200, top: 400, width: 600, height: 800 };
+ok("centre is the box's middle, not the canvas's", originPx("center", ANCHOR_BOX) === "500px 800px");
+ok("a corner is the box's corner", originPx("top left", ANCHOR_BOX) === "200px 400px");
+ok("the opposite corner too", originPx("bottom right", ANCHOR_BOX) === "800px 1200px");
+ok("one word names one axis and centres the other", originPx("top", ANCHOR_BOX) === "500px 400px");
+ok("and the same sideways", originPx("right", ANCHOR_BOX) === "800px 800px");
+ok("an unnamed origin is the centre", originPx(undefined, ANCHOR_BOX) === "500px 800px");
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

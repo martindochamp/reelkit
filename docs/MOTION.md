@@ -23,7 +23,7 @@ without a bundler.
 | curve | `ease` | `linear` · `in` · `out` · `inout` · `{spring: {stiffness, damping}}` | `out` |
 | split | `split` | `none` · `line` · `word` · `char` | `none` |
 | stagger | `stagger` | frames between parts | 2 |
-| origin | `origin` | a transform origin | `center` |
+| origin | `origin` | `center`, `top`, `bottom`, `left`, `right`, or a pair — the anchor a scale or rotation grows from | `center` |
 
 ## Every property owns its own clock
 
@@ -48,6 +48,28 @@ that means the element sits there small and still, waiting — which is not an
 entrance, it is a bug that happens to resolve. `lead` holds the element
 **hidden** (`visibility`, so nothing under it reflows) and then runs
 everything, delays included, from there.
+
+## What an anchor is measured against
+
+`origin` decides where a scale grows from, and the trap is that a CSS
+`transform-origin` is relative to **the node carrying the transform**, which
+is not the same thing as the element you can see.
+
+Measured 2026-09-13 on frames: `origin: "top"` on a footage card did not grow
+it from its own top edge, it dragged the whole card toward the top of the
+**screen** — because the animated node was a canvas-sized layer and the card
+merely sits inside it. An anchor nobody can predict is worse than no anchor.
+
+So for footage the keyword is resolved by `originPx()` against the card's own
+box, in canvas pixels, and the layer stays canvas-sized on purpose: `spill`
+draws the subject outside the box, and animating the box alone would leave a
+head behind while the card moved.
+
+**Type is not fixed and the asymmetry is deliberate for now.** A stage element
+animates on `StageBox`, the type column, so `left` anchors the column's edge
+rather than the glyphs'. Pinning an anchor to the painted text needs a node
+that shrink-wraps it, which changes the layout of every stage element — a job
+to judge on its own rather than smuggle in behind an anchor.
 
 ## `motionEnd` — what a specimen is measured against
 

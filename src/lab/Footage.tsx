@@ -1,5 +1,6 @@
 import React from "react";
 import { AbsoluteFill, OffthreadVideo, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { motionStyle, originPx } from "./motion.mjs";
 import {
   FOOTAGE_PRESETS,
   footageBox,
@@ -80,12 +81,25 @@ export type FootageSpec = {
   spill?: { matte: string; scale?: number; dy?: number; srcW?: number; srcH?: number };
 };
 
-export const Footage: React.FC<{ spec: FootageSpec }> = ({ spec }) => {
+export const Footage: React.FC<{
+  spec: FootageSpec;
+  /** The beat's motion, drawn HERE rather than on the stage box. */
+  motion?: import("./motion.mjs").Motion;
+  /** The beat's span in frames — what an `at: "exit"` hangs off. */
+  life?: number;
+}> = ({ spec, motion, life }) => {
   const frame = useCurrentFrame();
   const { fps, width: W, height: H } = useVideoConfig();
   const t = frame / fps;
   const f = resolveFootage(spec) as FootageSpec;
   const box = footageBox(f, t, W, H);
+
+  // The layer stays canvas-sized on purpose: `spill` draws the subject
+  // OUTSIDE the box, and animating the box alone would leave the head behind
+  // while the card moved. So the node is the whole frame and only the ANCHOR
+  // is moved onto the card, in canvas pixels.
+  const moved: React.CSSProperties = motionStyle(motion, frame, { life });
+  if (moved.transform) moved.transformOrigin = originPx(motion?.origin, box);
 
   const zoom = trackAt(f.focus?.zoom as any, t, 1);
   // objectPosition moves the crop inside the box; the zoom is a scale on the
@@ -106,7 +120,7 @@ export const Footage: React.FC<{ spec: FootageSpec }> = ({ spec }) => {
   };
 
   return (
-    <AbsoluteFill>
+    <AbsoluteFill style={moved}>
       <div
         style={{
           position: "absolute",

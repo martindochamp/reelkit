@@ -185,6 +185,35 @@ export const motionEnd = (m, { index = 0 } = {}) => {
 };
 
 /**
+ * An origin keyword resolved against an element's OWN box, in canvas pixels.
+ *
+ * A CSS `transform-origin` is relative to the node carrying the transform,
+ * and for an element that places itself inside a full-canvas layer — the
+ * footage box does exactly that — the node is the canvas. Measured
+ * 2026-09-13: `origin: "top"` on a footage card did not grow it from its own
+ * top edge, it dragged the whole card toward the top of the SCREEN. An
+ * anchor nobody can predict is worse than no anchor.
+ *
+ * @param {string} [origin] `center`, `top left`, `bottom`, …
+ * @param {{left: number, top: number, width: number, height: number}} box
+ */
+export const originPx = (origin = "center", box) => {
+  const words = String(origin).trim().toLowerCase().split(/\s+/);
+  const has = (w) => words.includes(w);
+  const x = has("left")
+    ? box.left
+    : has("right")
+      ? box.left + box.width
+      : box.left + box.width / 2;
+  const y = has("top")
+    ? box.top
+    : has("bottom")
+      ? box.top + box.height
+      : box.top + box.height / 2;
+  return `${x}px ${y}px`;
+};
+
+/**
  * The CSS a motion spec is worth at `frame`.
  *
  * Transform order is fixed — translate, rotate, scale — because a spec that
