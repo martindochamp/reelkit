@@ -21,8 +21,6 @@ without a bundler.
 | delay | `delay` | frames after the span's anchor | 0 |
 | black time | `lead` | frames the element is not drawn at all | 0 |
 | curve | `ease` | `linear` · `in` · `out` · `inout` · `{spring: {stiffness, damping}}` | `out` |
-| split | `split` | `none` · `line` · `word` · `char` | `none` |
-| stagger | `stagger` | frames between parts | 2 |
 | origin | `origin` | `center`, `top`, `bottom`, `left`, `right`, or a pair — the anchor a scale or rotation grows from | `center` |
 
 ## Every property owns its own clock
@@ -48,6 +46,60 @@ that means the element sits there small and still, waiting — which is not an
 entrance, it is a bug that happens to resolve. `lead` holds the element
 **hidden** (`visibility`, so nothing under it reflows) and then runs
 everything, delays included, from there.
+
+## Where a motion is written
+
+It cascades, in order of who knows best: **the screen, then the shot it is in,
+then the beat, then the reel.** `null` at any level means "none here" and stops
+the inheritance — the same three-state contract `field` uses. Resolved in
+`render-reel.mjs` beside the merge that already does this for a shot's `field`
+and `border`, so what reaches React is a spec that cannot half-inherit.
+
+A reel that names one entrance therefore has one; a beat that wants another
+says so; a beat that wants none says `"motion": null`.
+
+## Every element — and how that was proven
+
+`Stage` returns early for `blank`, `mockup`, full-bleed `media` and `lab`, and
+until 2026-09-13 those returns happened BEFORE the animated node: a `motion`
+on any of them rendered clean and moved nothing, which is 23 of the 26 element
+types. All four now pass through `StageBox`. For a `lab` beat the paper
+travels with the drawing on purpose — for that beat the screen IS the element,
+and a drawing sliding off its own paper is not an entrance.
+
+Proven by an A/B, not by reading: each element rendered twice, once with
+`motion: null` and once inheriting, then the content's bounding box measured
+above the caption band. Against a linear 0.6 → 1 over 30 frames, theory says
+−24 % at frame 12 and −13 % at frame 20; the lab pair measured −23.5 % and
+−11.8 %, footage −26.9 % and type −25.5 % at frame 10 for −26.7 % expected.
+
+That took three attempts, and the first two were the instrument's fault, not
+the engine's: the caption band's own label sat inside the measured box and the
+two beats of a pair carried labels of different lengths; then the offsets fell
+outside the motion entirely, because an `out` curve is front-loaded — at frame
+8 of a 12-frame zoom the scale is already 0.993. **A specimen sampled outside
+its own motion window measures two settled frames and says nothing.**
+
+## The bank
+
+`presets/` ships eleven, each usable at reel, beat or shot level, and each
+differing from its neighbours by a CONSTRUCTION rather than by a number:
+`arrive` (the house entrance — a short fade under a barely-there zoom),
+`fade-in`, `rise`, `zoom-in`, `zoom-out`, `blur-in`, `pop`, `punch`,
+`slide-in-left`, `slide-in-right`, and `leave`, the one exit, opt-in because
+across both references a title goes from full to gone in a single frame.
+
+Their numbers are the durations motion design uses at 30 fps, not measurements
+off a reference, and every file says so in its own `_measured`.
+
+## `split` and `stagger` were deleted
+
+Both were on the type, both were sampled here, and neither was ever passed an
+index: the two call sites hand over `{ life }` and nothing else, so every part
+was part zero. The measurement behind them is real — a title's words arrive one
+after another — but nothing SPLITS an element into parts yet, so the axis
+described a capability the engine does not have. It returns the day something
+produces an index.
 
 ## What an anchor is measured against
 

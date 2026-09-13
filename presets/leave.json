@@ -1,0 +1,23 @@
+{
+  "_level": [
+    "reel",
+    "beat",
+    "shot"
+  ],
+  "_why": "The one exit in the bank, and it is opt-in on purpose: across both torn-down references a title goes from full to gone in a single frame, so an element that dissolves is a decision, never a default. Shorter than any entrance, which is what editing convention says an exit should be.",
+  "_measured": "Not measured off a reference: these are the durations motion design uses at 30 fps (150 ms = 5 frames, 250 = 8, 400 = 12, 600 = 18), chosen off the effects sheet rendered 2026-09-13. A verdict on the sheet replaces them. REFERENCES.md: exits are hard cuts; the only measured ramps out are a colour tint (~30 frames) and the caption layer lingering ~4 frames past a cut.",
+  "motion": {
+    "opacity": {
+      "from": 1,
+      "to": 0,
+      "at": "exit",
+      "frames": 6
+    },
+    "scale": {
+      "from": 1,
+      "to": 0.98,
+      "at": "exit",
+      "frames": 8
+    }
+  }
+}

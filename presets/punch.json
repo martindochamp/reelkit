@@ -1,0 +1,16 @@
+{
+  "_level": [
+    "reel",
+    "beat",
+    "shot"
+  ],
+  "_why": "Five frames, no fade. For a cut that should land hard — the element is already there, it just arrives with weight. The closest thing in the bank to the references doctrine that entrances ramp and exits do not.",
+  "_measured": "Not measured off a reference: these are the durations motion design uses at 30 fps (150 ms = 5 frames, 250 = 8, 400 = 12, 600 = 18), chosen off the effects sheet rendered 2026-09-13. A verdict on the sheet replaces them.",
+  "motion": {
+    "scale": [
+      0.96,
+      1
+    ],
+    "frames": 5
+  }
+}

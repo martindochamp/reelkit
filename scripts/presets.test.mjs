@@ -557,8 +557,8 @@ ok("and has run by its last frame",
    motionAt({ opacity: [1, 0], at: "exit", frames: 6 }, 60, { life: 60 }).opacity === 0);
 ok("an exit with no life to hang off holds its end state",
    motionAt({ opacity: [1, 0], at: "exit", frames: 6 }, 3, {}).opacity === 0);
-ok("a stagger delays the second part by its own interval",
-   motionAt({ opacity: [0, 1], frames: 6, stagger: 3 }, 3, { index: 1 }).opacity === 0);
+// (`split`/`stagger` had an assertion here. Both were deleted from the
+// channel on 2026-09-13: nothing passes an index, so nothing ever staggered.)
 
 // Bounce is a NUMBER on the curve axis, not a preset of its own: the same
 // spring overshoots or does not, depending only on its damping.

@@ -1,0 +1,16 @@
+{
+  "_level": [
+    "reel",
+    "beat",
+    "shot"
+  ],
+  "_why": "Starts oversized and comes to rest. Reads as a camera settling rather than an element appearing, which is why it suits a full-bleed picture and suits type badly.",
+  "_measured": "Not measured off a reference: these are the durations motion design uses at 30 fps (150 ms = 5 frames, 250 = 8, 400 = 12, 600 = 18), chosen off the effects sheet rendered 2026-09-13. A verdict on the sheet replaces them.",
+  "motion": {
+    "scale": [
+      1.12,
+      1
+    ],
+    "frames": 12
+  }
+}

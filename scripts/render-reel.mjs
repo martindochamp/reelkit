@@ -1024,11 +1024,27 @@ for (const name of names) {
       copyFileSync(sSrc, path.join(sDir, beat.sound.file));
     }
 
+    // MOTION cascades, in order of who knows best: the screen, then the shot
+    // it is in, then the beat, then the reel. `null` at any level means "none
+    // here" and stops the inheritance — the three-state contract `field`
+    // already uses. Resolved HERE rather than in React because this is where
+    // a shot's `field` and `border` are already merged, and because a spec
+    // that arrives complete cannot half-inherit somewhere downstream.
+    const motionOf = (screen, shot) => {
+      if (!screen || typeof screen !== "object") return screen;
+      if (screen.motion !== undefined) return screen;
+      const inherited = [shot.motion, beat.motion, reel.motion].find(
+        (m) => m !== undefined,
+      );
+      if (inherited === undefined || inherited === null) return screen;
+      return { ...screen, motion: inherited };
+    };
+
     /** The shot list this beat hands the composition, laid over `frames`. */
     const shotProps = (frames) =>
       layShots(shots, frames, `${name} beat ${i + 1}`).map(
         ({ shot, startFrame, durationInFrames }) => ({
-          element: shot.screen,
+          element: motionOf(shot.screen, shot),
           startFrame,
           durationInFrames,
           // A shot has no spoken word to hang a [+] on, so its cues are
@@ -1079,7 +1095,7 @@ for (const name of names) {
         // `element`, one `cueFrames`, one `bg` — so a post that has not
         // asked for shots hands the composition byte-identical props.
         ...(single
-          ? { element: el, cueFrames: heldCues, ...(beat.bg ? { bg: beat.bg } : {}) }
+          ? { element: motionOf(el, shots[0]), cueFrames: heldCues, ...(beat.bg ? { bg: beat.bg } : {}) }
           : { cueFrames: [], shots: shotProps(frames) }),
         durationInFrames: frames,
         ...(beat.view ? { view: beat.view } : {}),
@@ -1182,7 +1198,7 @@ for (const name of names) {
     const frames = msToFrames(beatMs);
     beats.push({
       ...(single
-        ? { element: el, cueFrames, ...(beat.bg ? { bg: beat.bg } : {}) }
+        ? { element: motionOf(el, shots[0]), cueFrames, ...(beat.bg ? { bg: beat.bg } : {}) }
         : { cueFrames: [], shots: shotProps(frames) }),
       durationInFrames: frames,
       ...(beat.border !== undefined ? { border: beat.border ?? null } : {}),

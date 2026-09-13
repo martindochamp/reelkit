@@ -1,0 +1,16 @@
+{
+  "_level": [
+    "reel",
+    "beat",
+    "shot"
+  ],
+  "_why": "Starts under size and settles. `origin` is the knob that matters here — centre by default, a corner when the element should grow out of it.",
+  "_measured": "Not measured off a reference: these are the durations motion design uses at 30 fps (150 ms = 5 frames, 250 = 8, 400 = 12, 600 = 18), chosen off the effects sheet rendered 2026-09-13. A verdict on the sheet replaces them.",
+  "motion": {
+    "scale": [
+      0.8,
+      1
+    ],
+    "frames": 12
+  }
+}

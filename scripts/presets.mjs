@@ -202,7 +202,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       : "any";
     const keys = Object.keys(p).filter((k) => !k.startsWith("_") && k !== "extends");
     console.log(
-      `${name.padEnd(18)} ${p._origin.padEnd(8)} ${level.padEnd(10)}` +
+      // 16 wide plus a separator: `reel/beat/shot` is 14 and the old 10 let
+      // the keys column glue itself onto the level, which is how the first
+      // motion preset printed as "reel/beat/shotmotion".
+      `${name.padEnd(18)} ${p._origin.padEnd(8)} ${level.padEnd(16)} ` +
         `${p.extends ? `extends ${p.extends}  ` : ""}${keys.join(", ")}`,
     );
     if (p._measured) console.log(`${" ".repeat(19)}${p._measured}`);

@@ -1,0 +1,16 @@
+{
+  "_level": [
+    "reel",
+    "beat",
+    "shot"
+  ],
+  "_why": "Opacity alone. The only entrance with nothing to place, so it is what a beat asks for when the picture must not move — a chart whose bars are already animating, a table being read.",
+  "_measured": "Not measured off a reference: these are the durations motion design uses at 30 fps (150 ms = 5 frames, 250 = 8, 400 = 12, 600 = 18), chosen off the effects sheet rendered 2026-09-13. A verdict on the sheet replaces them.",
+  "motion": {
+    "opacity": [
+      0,
+      1
+    ],
+    "frames": 8
+  }
+}

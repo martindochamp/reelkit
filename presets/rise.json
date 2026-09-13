@@ -1,0 +1,21 @@
+{
+  "_level": [
+    "reel",
+    "beat",
+    "shot"
+  ],
+  "_why": "Travel plus fade: comes up 40 px while it solidifies. The measured reference for `grow` is a compound scale, this is its translation cousin and reads as something being placed rather than revealed.",
+  "_measured": "Not measured off a reference: these are the durations motion design uses at 30 fps (150 ms = 5 frames, 250 = 8, 400 = 12, 600 = 18), chosen off the effects sheet rendered 2026-09-13. A verdict on the sheet replaces them.",
+  "motion": {
+    "opacity": {
+      "from": 0,
+      "to": 1,
+      "frames": 6
+    },
+    "y": {
+      "from": 40,
+      "to": 0,
+      "frames": 12
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "_level": [
+    "reel",
+    "beat",
+    "shot"
+  ],
+  "_why": "A focus pull: the fade is done a fifth of a second in while the blur keeps resolving. On type it reads as a dissolve, on a picture as a lens finding it — the same numbers, two different effects, which is why it is one preset and not two.",
+  "_measured": "Not measured off a reference: these are the durations motion design uses at 30 fps (150 ms = 5 frames, 250 = 8, 400 = 12, 600 = 18), chosen off the effects sheet rendered 2026-09-13. A verdict on the sheet replaces them.",
+  "motion": {
+    "opacity": {
+      "from": 0,
+      "to": 1,
+      "frames": 6
+    },
+    "blur": {
+      "from": 12,
+      "to": 0,
+      "frames": 14
+    }
+  }
+}

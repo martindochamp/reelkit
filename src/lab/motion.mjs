@@ -37,8 +37,7 @@
  *   opacity?: Prop, scale?: Prop, x?: Prop, y?: Prop, rotate?: Prop,
  *   blur?: Prop, brightness?: Prop,
  *   at?: "enter"|"exit"|number, frames?: number, delay?: number, ease?: Ease,
- *   lead?: number, split?: "none"|"line"|"word"|"char", stagger?: number,
- *   origin?: string,
+ *   lead?: number, origin?: string,
  * }} Motion
  * `at` says what a span hangs off: `"enter"` the element's arrival, `"exit"`
  * its departure, a number the seconds into its life. `lead` holds the element
@@ -90,14 +89,14 @@ export const curve = (ease) => {
   return EASE[ease] ?? EASE.out;
 };
 
-/**
- * Frames of delay for part `index` under a stagger.
- *
- * Measured: a title's words arrive in a staggered cascade, not together —
- * REFERENCES.md, "opacity, staggered per line or per word".
- */
-export const partDelay = (index = 0, stagger = 2) =>
-  Math.max(0, Math.round(index * stagger));
+// `split` and `stagger` USED TO BE HERE and were deleted 2026-09-13. They
+// were declared on the type, sampled by this module, and passed an `index` by
+// nobody: both call sites — the stage box and the footage layer — hand over
+// `{ life }` and nothing else, so every part was part zero and no cascade
+// ever staggered. The measurement they came from is real (a title's words
+// arrive one after another), but nothing SPLITS an element into parts yet, so
+// the axis described a capability the engine does not have. It comes back the
+// day something produces an index, and not before.
 
 /** `[from, to]`, a number, or an object → `{from, to}` for that property. */
 const endsOf = (key, v) => {
@@ -124,7 +123,7 @@ export const spanOf = (m, v) => {
  * @param {number} frame frames since the element arrived
  * @param {{life?: number, index?: number, fps?: number, stagger?: number}} ctx
  */
-export const progressOfSpan = (span, frame, { life, index = 0, fps = 30, stagger = 2 } = {}) => {
+export const progressOfSpan = (span, frame, { life, fps = 30 } = {}) => {
   let start;
   if (span.at === "exit") {
     if (life == null) return 1; // nothing to hang an exit off: hold the end state
@@ -134,7 +133,7 @@ export const progressOfSpan = (span, frame, { life, index = 0, fps = 30, stagger
   } else {
     start = 0;
   }
-  start += span.delay + partDelay(index, stagger);
+  start += span.delay;
   const t = (frame - start) / span.frames;
   return curve(span.ease)(Math.min(1, Math.max(0, t)));
 };
@@ -154,7 +153,7 @@ export const motionAt = (m, frame, ctx = {}) => {
     const v = m[key];
     if (v == null) continue;
     const { from, to } = endsOf(key, v);
-    const p = progressOfSpan(spanOf(m, v), frame, { ...ctx, stagger: m.stagger ?? 2 });
+    const p = progressOfSpan(spanOf(m, v), frame, ctx);
     out[key] = from + (to - from) * p;
   }
   return out;
@@ -167,7 +166,7 @@ export const motionAt = (m, frame, ctx = {}) => {
  *
  * Returns 0 for a spec that only leaves or only moves later.
  */
-export const motionEnd = (m, { index = 0 } = {}) => {
+export const motionEnd = (m) => {
   if (!m || typeof m !== "object") return 0;
   let end = 0;
   for (const key of PROPS) {
@@ -175,10 +174,7 @@ export const motionEnd = (m, { index = 0 } = {}) => {
     if (v == null) continue;
     const span = spanOf(m, v);
     if (span.at === "exit") continue;
-    const start =
-      (typeof span.at === "number" ? span.at * 30 : 0) +
-      span.delay +
-      partDelay(index, m.stagger ?? 2);
+    const start = (typeof span.at === "number" ? span.at * 30 : 0) + span.delay;
     end = Math.max(end, start + span.frames);
   }
   return Math.round(end);

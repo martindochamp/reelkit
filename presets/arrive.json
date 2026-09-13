@@ -1,0 +1,21 @@
+{
+  "_level": [
+    "reel",
+    "beat",
+    "shot"
+  ],
+  "_why": "The house entrance, and the one a beat should almost never have to override: a short fade under a slightly longer, barely-there zoom. Subtle enough to sit under every element in the bank without reading as an effect.",
+  "_measured": "Not measured off a reference: these are the durations motion design uses at 30 fps (150 ms = 5 frames, 250 = 8, 400 = 12, 600 = 18), chosen off the effects sheet rendered 2026-09-13. A verdict on the sheet replaces them.",
+  "motion": {
+    "opacity": {
+      "from": 0,
+      "to": 1,
+      "frames": 6
+    },
+    "scale": {
+      "from": 0.94,
+      "to": 1,
+      "frames": 12
+    }
+  }
+}

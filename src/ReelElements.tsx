@@ -1466,24 +1466,26 @@ export const Stage: React.FC<{
   if (element.type === "mockup") {
     const rise = element.rise ?? 0.62;
     return (
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundColor: palettes[theme].paper,
-        }}
-      >
-        <Img
-          src={staticFile(`mockups/${element.file}`)}
+      <StageBox full centered={false} motion={element.motion} life={life}>
+        <div
           style={{
             position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)",
-            top: `${(1 - rise) * 100}%`,
-            width: 660,
+            inset: 0,
+            backgroundColor: palettes[theme].paper,
           }}
-        />
-      </div>
+        >
+          <Img
+            src={staticFile(`mockups/${element.file}`)}
+            style={{
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+              top: `${(1 - rise) * 100}%`,
+              width: 660,
+            }}
+          />
+        </div>
+      </StageBox>
     );
   }
 
@@ -1494,6 +1496,7 @@ export const Stage: React.FC<{
   if (element.type === "media" && element.fit === "bleed") {
     const light = palettes.light;
     return (
+      <StageBox full centered={false} motion={element.motion} life={life}>
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", backgroundColor: palettes[theme].paper }}>
         {element.kind === "video" ? (
           <OffthreadVideo
@@ -1531,11 +1534,16 @@ export const Stage: React.FC<{
           </div>
         ) : null}
       </div>
+      </StageBox>
     );
   }
 
-  // Lab elements own their whole frame — paper, layout, motion. The [+]
-  // cues flow into their own cue props through the registry mapping.
+  // Lab elements own their whole frame — paper, layout and their own inner
+  // motion. What they did NOT own until 2026-09-13 is the beat's `motion`:
+  // this branch returned before StageBox, so `{"type":"lab","motion":{…}}`
+  // rendered clean and animated nothing, on 23 of the 26 element types. The
+  // paper travels with the drawing on purpose: for a lab beat the screen IS
+  // the element, and a drawing sliding off its own paper is not an entrance.
   if (element.type === "lab") {
     const entry = LAB_REGISTRY[element.element];
     if (!entry) {
@@ -1544,22 +1552,24 @@ export const Stage: React.FC<{
     const Comp = entry.component;
     const paper = palettes[theme].paper;
     return (
-      <div style={{ position: "absolute", inset: 0, backgroundColor: paper }}>
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            transform: `translateY(${STAGE_TOP - LAB_AUTHORED_TOP}px) scale(${LAB_SCALE})`,
-            transformOrigin: `50% ${LAB_AUTHORED_TOP}px`,
-          }}
-        >
-          <Comp
-            theme={theme}
-            {...(element.props ?? {})}
-            {...entry.mapCues(cueFrames, element.props ?? {})}
-          />
+      <StageBox full centered={false} motion={element.motion} life={life}>
+        <div style={{ position: "absolute", inset: 0, backgroundColor: paper }}>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              transform: `translateY(${STAGE_TOP - LAB_AUTHORED_TOP}px) scale(${LAB_SCALE})`,
+              transformOrigin: `50% ${LAB_AUTHORED_TOP}px`,
+            }}
+          >
+            <Comp
+              theme={theme}
+              {...(element.props ?? {})}
+              {...entry.mapCues(cueFrames, element.props ?? {})}
+            />
+          </div>
         </div>
-      </div>
+      </StageBox>
     );
   }
   // The footage box places itself against the WHOLE canvas — `footageBox`

@@ -1,0 +1,21 @@
+{
+  "_level": [
+    "reel",
+    "beat",
+    "shot"
+  ],
+  "_why": "Mirror of `slide-in-left`. Two files rather than a direction flag: a preset is a named set of values, and the value that differs here is a sign.",
+  "_measured": "Not measured off a reference: these are the durations motion design uses at 30 fps (150 ms = 5 frames, 250 = 8, 400 = 12, 600 = 18), chosen off the effects sheet rendered 2026-09-13. A verdict on the sheet replaces them.",
+  "motion": {
+    "opacity": {
+      "from": 0,
+      "to": 1,
+      "frames": 6
+    },
+    "x": {
+      "from": 60,
+      "to": 0,
+      "frames": 12
+    }
+  }
+}
