@@ -19,11 +19,19 @@
  * `at` is either seconds (a number) or a name: `"s3.start"`, `"cut7"`,
  * `"broll2.end"`. `offset` is seconds, or frames when written `"+4f"`.
  *
- * @typedef {{id: string, from: Anchor, to?: Anchor, seconds?: number}} Placed
+ * @typedef {{id: string, from?: Anchor, to?: Anchor, seconds?: number, span?: string}} Placed
  * An element's span. `to` and `seconds` are alternatives; with neither, the
  * span is open-ended and runs to the end of the reel — which is what a placed
  * scene item already does today (Reel.tsx, "a Sequence with no
  * durationInFrames").
+ *
+ * `span` says COINCIDENCE instead of computing it: `{span: "s3"}` is "exactly
+ * as long as sentence 3", and when that sentence is regenerated longer both
+ * edges move together. Martin, 2026-09-13, on whether a span that ends before
+ * it starts should be refused or clamped: *"je crois que c'est un faux
+ * problème"* — and he is right, because the inversion only ever came from
+ * mixing a moving edge with a fixed one. Saying the intent directly removes
+ * the case instead of choosing how to fail at it.
  */
 
 /** `"+4f"` → frames, `0.2` → seconds × fps, `"-0.3"` → seconds × fps. */
@@ -66,6 +74,21 @@ const ownerOf = (name) => String(name).split(".")[0];
  * @returns {Record<string, {start: number, length: number|null}>}
  */
 export const layOut = (placed, named = {}, { fps = 30, end = null, onInverted = "refuse" } = {}) => {
+  // `span` is expanded here so nothing downstream has to know about it. It
+  // exists because the inversion this resolver used to agonise over only ever
+  // came from mixing a moving edge with a fixed one: saying "these coincide"
+  // removes the case instead of choosing how to fail at it.
+  placed = placed.map((p) => {
+    if (p.span == null) return p;
+    if (p.from != null || p.to != null || p.seconds != null) {
+      throw new Error(
+        `"${p.id}" gives both \`span\` and its own edges. \`span: "${p.span}"\` ` +
+          `already means from its start to its end — one or the other.`,
+      );
+    }
+    return { ...p, from: { at: `${p.span}.start` }, to: { at: `${p.span}.end` } };
+  });
+
   const byId = new Map();
   for (const p of placed) {
     if (byId.has(p.id)) throw new Error(`two elements are both called "${p.id}" — an anchor could not say which`);

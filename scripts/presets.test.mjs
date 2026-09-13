@@ -699,5 +699,25 @@ ok("and clamps to one frame when the caller asks for that instead",
    layOut([{ id: "x", from: { at: "s3.end" }, to: { at: "s3.start" } }], TL_NAMED,
           { onInverted: "clamp" }).x.length === 1);
 
+// `span` says COINCIDENCE. It is the answer to the inversion question rather
+// than a policy for failing at it: the case only ever arose from mixing a
+// moving edge with a fixed one, so an element that means "as long as that"
+// should be able to say exactly that.
+ok("a span takes its target's whole length",
+   (() => { const r = layOut([{ id: "cap", span: "s3" }], TL_NAMED).cap;
+            return r.start === 90 && r.length === 60; })());
+ok("and it FOLLOWS when the sentence is regenerated longer — no inversion possible",
+   layOut([{ id: "cap", span: "s3" }], { "s3.start": 90, "s3.end": 210 }).cap.length === 120);
+ok("a span can coincide with another element, not only a sentence",
+   (() => { const r = layOut([{ id: "b", from: { at: "s3.start" }, to: { at: "s3.end" } },
+                              { id: "c", span: "b" }], TL_NAMED).c;
+            return r.start === 90 && r.length === 60; })());
+throws("a span AND its own edges is refused as ambiguous",
+   () => layOut([{ id: "cap", span: "s3", seconds: 2 }], TL_NAMED),
+   /one or the other/);
+throws("a span on something open-ended has no end to borrow",
+   () => layOut([{ id: "open", from: { at: "s3.start" } }, { id: "x", span: "open" }], TL_NAMED),
+   /no such edge/);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -64,7 +64,14 @@ number at all: `{ "at": "s3.start" }`.
 { "from": { "at": "s3.start" }, "to": { "at": "s5.end" } }
 { "from": { "at": "s3.start" }, "seconds": 2.4 }
 { "from": { "at": "s3.start" } }                 // open-ended, to the end of the reel
+{ "span": "s3" }                                 // exactly as long as sentence 3
+{ "span": "broll2" }                             // exactly as long as that element
 ```
+
+`span` is the one that matters for authoring. It says two things **coincide**
+rather than computing the coincidence from two edges that can drift apart, so
+a sentence regenerated 400 ms longer takes its caption with it. Giving both
+`span` and your own edges is refused as ambiguous.
 
 The open-ended form is what a placed item already is today — it is being
 named, not invented.
@@ -129,15 +136,28 @@ of replacing it.
   a stacking context and kills `mix-blend-mode` silently. A resolver that
   wraps elements in timing nodes will hit this on its first day.
 
-## The two questions I cannot answer alone
+## Both questions, answered 2026-09-13
 
-1. **What does `s3.end` mean when the voice is regenerated 400 ms longer?**
-   It moves, and everything anchored to it moves — that is the intent. But an
-   element anchored to `s3.end + 0.2` inside a beat that also shortened can end
-   up before its own start. Clamp, or refuse?
-2. **Does a shot keep its own identity?** If shots become elements with spans,
-   `shots` stops being a key and becomes a layer. That reads cleaner, and it
-   is also the biggest single break in the post format.
+1. **A span that ends before it starts.** Martin: *"je crois que c'est un faux
+   problème."* He is right, and the framing was the defect: the inversion only
+   ever came from mixing a moving edge with a fixed one. An element that means
+   "as long as that sentence" must be able to SAY so — hence `span` — and then
+   it grows with its target instead of contradicting it. The refusal stays for
+   what is left, which is a genuine authoring mistake (a start on a sentence,
+   an end on an absolute second), not an accident of regeneration.
+
+   He also asked that silences be equalised so durations compare. They already
+   are: `tts.mjs` trims the edge silence off every sentence — the tail 12 dB
+   quieter and with more grace than the head, because a final fricative decays
+   below the level at which it started — and inserts a fixed 140 ms breath at
+   assembly, "a breath, not the model's variable pause".
+
+2. **Shots dissolve.** Martin: *"le système de timeline et notre système de
+   footage devrait faire l'affaire."* A shot becomes an element with a span;
+   `seconds` and `weight` become anchors. But not on day one: shots keep
+   rendering THROUGH the resolver until a parity render proves the timeline
+   covers them, and the key goes away after that. Deleting a feature before
+   its replacement is proven is how a working pipeline breaks.
 
 ## Order of work
 
