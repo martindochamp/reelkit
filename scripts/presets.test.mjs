@@ -17,6 +17,7 @@
 // that will not be tested.
 
 import { applyPreset, resolvePresets } from "./presets.mjs";
+import { motionAt, motionStyle } from "../src/lab/motion.mjs";
 
 let pass = 0, fail = 0;
 const ok = (label, cond, got) => {
@@ -534,6 +535,53 @@ ok("a lower floor lets the fit succeed where the default gave up",
 // The safe box replaced `left: 84, right: 84` written into the band.
 ok("the safe inset is still 84", SAFE_DEFAULTS.x === 84);
 ok("and it now has a floor too", SAFE_DEFAULTS.bottom > 0);
+
+// MOTION. The channel is pure, so its arithmetic is asserted here rather
+// than read off a frame — what a frame is for is judging whether the
+// numbers were the right ones, which is a different question.
+ok("an element with no motion carries no style at all",
+   Object.keys(motionStyle(undefined, 10, {})).length === 0);
+ok("an entrance opens on its from value",
+   motionAt({ opacity: [0, 1], frames: 8 }, 0, {}).opacity === 0);
+ok("and lands exactly on its to value",
+   motionAt({ opacity: [0, 1], frames: 8 }, 8, {}).opacity === 1);
+ok("then holds, rather than running off its end",
+   motionAt({ opacity: [0, 1], frames: 8 }, 40, {}).opacity === 1);
+ok("a bare number reads as from-rest",
+   motionAt({ opacity: 0.5, frames: 4 }, 4, {}).opacity === 0.5);
+ok("a property nobody animates is absent, not reset to rest",
+   motionAt({ opacity: [0, 1], frames: 4 }, 4, {}).scale === undefined);
+ok("an exit hangs off the end of the element's life",
+   motionAt({ opacity: [1, 0], at: "exit", frames: 6 }, 54, { life: 60 }).opacity === 1);
+ok("and has run by its last frame",
+   motionAt({ opacity: [1, 0], at: "exit", frames: 6 }, 60, { life: 60 }).opacity === 0);
+ok("an exit with no life to hang off holds its end state",
+   motionAt({ opacity: [1, 0], at: "exit", frames: 6 }, 3, {}).opacity === 0);
+ok("a stagger delays the second part by its own interval",
+   motionAt({ opacity: [0, 1], frames: 6, stagger: 3 }, 3, { index: 1 }).opacity === 0);
+
+// Bounce is a NUMBER on the curve axis, not a preset of its own: the same
+// spring overshoots or does not, depending only on its damping.
+const springMax = (spring) => {
+  let max = 0;
+  for (let f = 0; f <= 20; f++) {
+    max = Math.max(max, motionAt({ scale: [0, 1], frames: 20, ease: { spring } }, f, {}).scale);
+  }
+  return max;
+};
+ok("an underdamped spring overshoots", springMax({ stiffness: 200, damping: 6 }) > 1);
+ok("a damped one never does", springMax({ stiffness: 100, damping: 40 }) <= 1);
+ok("and either way it settles exactly on its to value",
+   motionAt({ scale: [0, 1], frames: 20, ease: { spring: { stiffness: 200, damping: 6 } } }, 20, {}).scale === 1);
+
+ok("transform composes translate, then rotate, then scale",
+   motionStyle({ x: [0, 10], rotate: [0, 5], scale: [0, 1], frames: 1 }, 1, {}).transform ===
+     "translate(10px, 0px) rotate(5deg) scale(1)");
+ok("blur and brightness land in one filter",
+   motionStyle({ blur: [8, 0], brightness: [0.4, 1], frames: 4 }, 0, {}).filter ===
+     "blur(8px) brightness(0.4)");
+ok("a settled blur is dropped rather than written as blur(0px)",
+   motionStyle({ blur: [8, 0], frames: 4 }, 4, {}).filter === undefined);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

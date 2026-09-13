@@ -10,6 +10,7 @@ import {
 import { projectElements } from "reelkit-elements";
 import { Flag } from "./Flags";
 import { revealStyle } from "./lab/reveal";
+import { motionStyle } from "./lab/motion.mjs";
 import { mono, mu, palettes, tokens, wordmark, type Palette } from "./tokens";
 import { BarChart } from "./lab/BarChart";
 import { Bullets } from "./lab/Bullets";
@@ -256,7 +257,7 @@ export const LabFrame: React.FC<{
 
 export type StageMode = "paper" | "photo" | "ink" | "bed";
 
-export type ReelElementSpec =
+export type ReelElementSpec = (
   | {
       /**
        * Nothing on the stage. The background, the frame rule and the
@@ -472,7 +473,19 @@ export type ReelElementSpec =
       type: "lab";
       element: string;
       props?: Record<string, unknown>;
-    };
+    }
+) & {
+  /**
+   * How the element arrives, leaves, or moves once it is there — a
+   * property over a span, sampled per frame. One channel for every
+   * element rather than the seventeen hand-written entrances this
+   * replaces; src/lab/motion.mjs carries the axes and the reasoning.
+   *
+   * Absent, nothing changes: an element with no `motion` renders exactly
+   * as it did before the channel existed.
+   */
+  motion?: import("./lab/motion.mjs").Motion;
+};
 
 /** How many cue-able parts an element exposes, in reading order. */
 export const elementParts = (el: ReelElementSpec): number => {
@@ -1391,12 +1404,52 @@ const Element: React.FC<{
  * The mode decides what the element is made of: type on paper, a printed
  * card on a photograph, paper type on ink.
  */
+/**
+ * The stage box every ordinary element sits in — and, when the beat asks
+ * for one, the element's own motion.
+ *
+ * It is a component rather than a few lines inside `Stage` for one
+ * reason: `Stage` returns early for blank, mockup, bleed media and lab
+ * elements, so a `useCurrentFrame()` in its tail would be a hook after a
+ * conditional return. This is also the honest place for the style —
+ * the box IS the element's node here, not a wrapper thrown around it, so
+ * a transform on it cannot cut a blended layer off its backdrop.
+ */
+const StageBox: React.FC<{
+  motion?: import("./lab/motion.mjs").Motion;
+  life?: number;
+  centered: boolean;
+  children: React.ReactNode;
+}> = ({ motion, life, centered, children }) => {
+  const frame = useCurrentFrame();
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: STAGE_TOP,
+        bottom: 1920 - STAGE_BOTTOM_REEL,
+        left: PAD_X,
+        right: PAD_RIGHT,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: centered ? "center" : "stretch",
+        ...motionStyle(motion, frame, { life }),
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
 export const Stage: React.FC<{
   element: ReelElementSpec;
   cueFrames: number[];
   theme: "light" | "dark";
   mode: StageMode;
-}> = ({ element, cueFrames, theme, mode }) => {
+  /** The beat's whole span in frames — what an `at: "exit"` hangs off. */
+  life?: number;
+}> = ({ element, cueFrames, theme, mode, life }) => {
   // Nothing on the stage. Not a no-op with a placeholder in it and not an
   // empty card: no node at all, so the beat's ground, its frame rule and
   // its caption band are the whole picture.
@@ -1528,24 +1581,12 @@ export const Stage: React.FC<{
     />
   );
   return (
-    <div
-      style={{
-        position: "absolute",
-        top: STAGE_TOP,
-        bottom: 1920 - STAGE_BOTTOM_REEL,
-        left: PAD_X,
-        right: PAD_RIGHT,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: centered ? "center" : "stretch",
-      }}
-    >
+    <StageBox motion={element.motion} life={life} centered={centered}>
       {mode === "photo" && element.type !== "title" ? (
         <Card>{body}</Card>
       ) : (
         body
       )}
-    </div>
+    </StageBox>
   );
 };

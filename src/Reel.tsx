@@ -1074,6 +1074,7 @@ const ShotLayer: React.FC<{
             cueFrames={cueFrames}
             theme={theme}
             mode={mode}
+            life={durationInFrames}
           />
         </Entrance>
       )}
