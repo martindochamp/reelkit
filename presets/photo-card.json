@@ -1,0 +1,7 @@
+{
+  "_level": ["beat", "shot"],
+  "_measured": "research/2026-09-08/teardowns/chad-00-07/TEARDOWN.md §3. The same card geometry as `hard-card` over a photograph, with the rule drawn WHITE and opaque on top of the image — sampled RGB(250-254), no alpha blend with the picture under it.",
+  "_why": "This is GAPS-rendered.md #6 as a preset. One border colour for a whole reel measured barely legible on every photo beat of a reproduction; a beat or shot sitting on a photograph names this and gets a rule that contrasts its own background.",
+  "_not_extends_hard_card": "It looks like it should extend `hard-card` and it must not: that one sets `chrome.border`, which only means anything on the reel. Extending it would inject a dead `chrome` key into every beat that named this — the exact silent-wrongness `_level` now refuses.",
+  "border": { "color": "#FCFCFC", "width": 12, "inset": 105, "radius": 0 }
+}

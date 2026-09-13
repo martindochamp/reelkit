@@ -1,0 +1,13 @@
+{
+  "_level": "reel",
+  "_measured": "research/2026-09-08/teardowns/chad-00-07/TEARDOWN.md \u00a75. A 720-wide reference: 8 px stroke, radius 0, inset 70 px sides / 81 px top-bottom, colour RGB(37,37,37). Scaled x1.5 to the 1080 canvas.",
+  "_note": "The reference's inset is ASYMMETRIC (70 sides, 81 top-bottom) and `inset` is one number, so the sides win and the top-bottom is 12 px tighter than measured. Recorded rather than rounded away.",
+  "chrome": {
+    "border": {
+      "color": "#252525",
+      "width": 12,
+      "inset": 105,
+      "radius": 0
+    }
+  }
+}
