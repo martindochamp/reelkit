@@ -1122,12 +1122,8 @@ const Element: React.FC<{
       );
     }
 
-    case "footage":
-      // The box owns the whole frame and places itself inside it — it does
-      // not sit on the stage's column like the drawn elements do, because a
-      // "full" box has to reach the canvas edge and the stage's margins
-      // exist to stop type from doing that.
-      return <Footage spec={element.spec} />;
+    // `footage` is not here: it is handled in `Stage`, before the type
+    // column is applied, because it measures itself against the canvas.
 
     case "media": {
       // Everything else on this stage is 48 to 72 glyphs a line. This one
@@ -1419,21 +1415,31 @@ const StageBox: React.FC<{
   motion?: import("./lab/motion.mjs").Motion;
   life?: number;
   centered: boolean;
+  /**
+   * The whole canvas instead of the type column. An element that computes
+   * its own geometry against 1080×1920 — the footage box — has to be given
+   * 1080×1920, or its numbers describe a frame it is not being drawn in.
+   */
+  full?: boolean;
   children: React.ReactNode;
-}> = ({ motion, life, centered, children }) => {
+}> = ({ motion, life, centered, full = false, children }) => {
   const frame = useCurrentFrame();
   return (
     <div
       style={{
         position: "absolute",
-        top: STAGE_TOP,
-        bottom: 1920 - STAGE_BOTTOM_REEL,
-        left: PAD_X,
-        right: PAD_RIGHT,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: centered ? "center" : "stretch",
+        top: full ? 0 : STAGE_TOP,
+        bottom: full ? 0 : 1920 - STAGE_BOTTOM_REEL,
+        left: full ? 0 : PAD_X,
+        right: full ? 0 : PAD_RIGHT,
+        ...(full
+          ? null
+          : {
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: centered ? "center" : "stretch",
+            }),
         ...motionStyle(motion, frame, { life }),
       }}
     >
@@ -1556,6 +1562,24 @@ export const Stage: React.FC<{
       </div>
     );
   }
+  // The footage box places itself against the WHOLE canvas — `footageBox`
+  // reads its width and height from `useVideoConfig`, not from its parent —
+  // so it cannot be drawn inside the type column. Measured 2026-09-13 on a
+  // `full` preset in a real beat: top edge at 13.4 % and left edge at 11 %
+  // of the frame, which is exactly STAGE_TOP and PAD_X, with the box
+  // squashed into 770×820. The `case "footage"` this replaces sat in the
+  // element switch, downstream of the column, while its own comment said a
+  // full box "has to reach the canvas edge". The lab renders it with no
+  // column at all, which is why the preset sheet looked right and a post
+  // did not.
+  if (element.type === "footage") {
+    return (
+      <StageBox full motion={element.motion} life={life} centered={false}>
+        <Footage spec={element.spec} />
+      </StageBox>
+    );
+  }
+
   // A card is physical paper — always light. The ink beat inverts the
   // POST'S OWN skin (dark post → light beat, light post → dark beat), so
   // the turn reads as a jolt in either theme; the paper beat follows the
