@@ -18,6 +18,7 @@
 
 import { applyPreset, resolvePresets } from "./presets.mjs";
 import { motionAt, motionEnd, motionStyle, originPx } from "../src/lab/motion.mjs";
+import { layOut, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
 
 let pass = 0, fail = 0;
 const ok = (label, cond, got) => {
@@ -644,6 +645,59 @@ ok("the opposite corner too", originPx("bottom right", ANCHOR_BOX) === "800px 12
 ok("one word names one axis and centres the other", originPx("top", ANCHOR_BOX) === "500px 400px");
 ok("and the same sideways", originPx("right", ANCHOR_BOX) === "800px 800px");
 ok("an unnamed origin is the centre", originPx(undefined, ANCHOR_BOX) === "500px 800px");
+
+// TIMELINE. The resolver is pure, so the arithmetic is asserted here and the
+// frames are kept for judging whether the numbers were the right ones.
+// docs/TIMELINE.md holds the surface; this is the part that is settled
+// whatever its two open questions are answered.
+ok("seconds become frames", offsetFrames(0.2, 30) === 6);
+ok("an f suffix is frames, untouched", offsetFrames("+4f", 30) === 4);
+ok("a negative offset reads as one", offsetFrames("-0.3", 30) === -9);
+ok("no offset is no frames", offsetFrames(undefined, 30) === 0);
+throws("an offset that is neither is refused", () => offsetFrames("soon"), /not seconds or frames/);
+
+ok("a bare number anchors absolutely", parseAnchor(1.5, 30).ref === null && parseAnchor(1.5, 30).frames === 45);
+ok("a bare string anchors to a name", parseAnchor("s3.end").ref === "s3.end");
+ok("a name plus an offset keeps both",
+   (() => { const a = parseAnchor({ at: "s3.end", offset: "+4f" }, 30); return a.ref === "s3.end" && a.frames === 4; })());
+ok("an absolute anchor folds its offset in", parseAnchor({ at: 2, offset: 0.5 }, 30).frames === 75);
+
+const TL_NAMED = { "s3.start": 90, "s3.end": 150 };
+ok("an absolute span lands where it says",
+   layOut([{ id: "a", from: { at: 0 }, seconds: 1 }], TL_NAMED).a.start === 0);
+ok("and takes the length it asked for",
+   layOut([{ id: "a", from: { at: 0 }, seconds: 1 }], TL_NAMED).a.length === 30);
+ok("a span between two sentence edges takes the gap",
+   (() => { const r = layOut([{ id: "b", from: { at: "s3.start" }, to: { at: "s3.end" } }], TL_NAMED).b;
+            return r.start === 90 && r.length === 60; })());
+ok("an element anchored to ANOTHER moves with it, whatever the order in the list",
+   layOut([{ id: "c", from: { at: "b.end" }, seconds: 1 },
+           { id: "b", from: { at: "s3.start" }, to: { at: "s3.end" } }], TL_NAMED).c.start === 150);
+ok("a span with no end runs to the end of the reel",
+   layOut([{ id: "d", from: { at: "s3.start" } }], TL_NAMED, { end: 300 }).d.length === 210);
+ok("and has no length at all when the reel's end is unknown",
+   layOut([{ id: "d", from: { at: "s3.start" } }], TL_NAMED).d.length === null);
+
+throws("two elements with one name are refused",
+   () => layOut([{ id: "a", from: { at: 0 } }, { id: "a", from: { at: 1 } }], TL_NAMED),
+   /both called "a"/);
+throws("an anchor to a name that exists nowhere is refused, not ignored",
+   () => layOut([{ id: "a", from: { at: "s9.end" } }], TL_NAMED),
+   /names nothing/);
+throws("an anchor to an element with no such edge says so",
+   () => layOut([{ id: "open", from: { at: "s3.start" } },
+                 { id: "after", from: { at: "open.end" } }], TL_NAMED),
+   /no such edge/);
+throws("a loop is refused BY NAME",
+   () => layOut([{ id: "a", from: { at: "b.end" }, seconds: 1 },
+                 { id: "b", from: { at: "a.end" }, seconds: 1 }], TL_NAMED),
+   /loop/);
+throws("a span that ends before it starts is refused by default",
+   () => layOut([{ id: "x", from: { at: "s3.end" }, to: { at: "s3.start" } }], TL_NAMED),
+   /ends before it starts/);
+ok("and clamps to one frame when the caller asks for that instead",
+   layOut([{ id: "x", from: { at: "s3.end" }, to: { at: "s3.start" } }], TL_NAMED,
+          { onInverted: "clamp" }).x.length === 1);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
