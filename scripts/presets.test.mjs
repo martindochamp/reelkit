@@ -18,7 +18,7 @@
 
 import { applyPreset, resolvePresets } from "./presets.mjs";
 import { motionAt, motionEnd, motionStyle, originPx } from "../src/lab/motion.mjs";
-import { edgesOf, layOut, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
+import { edgesOf, layOut, msToFrames, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
 
 let pass = 0, fail = 0;
 const ok = (label, cond, got) => {
@@ -650,6 +650,12 @@ ok("an unnamed origin is the centre", originPx(undefined, ANCHOR_BOX) === "500px
 // frames are kept for judging whether the numbers were the right ones.
 // docs/TIMELINE.md holds the surface; this is the part that is settled
 // whatever its two open questions are answered.
+// The renderer's own rounding, moved here so the layout and the render cannot
+// disagree by a frame. These are the values render-reel.mjs has always given.
+ok("a second is thirty frames", msToFrames(1000, 30) === 30);
+ok("and it rounds to nearest, not down", msToFrames(1040, 30) === 31);
+ok("half a frame rounds up", msToFrames(1050, 30) === 32);
+
 ok("seconds become frames", offsetFrames(0.2, 30) === 6);
 ok("an f suffix is frames, untouched", offsetFrames("+4f", 30) === 4);
 ok("a negative offset reads as one", offsetFrames("-0.3", 30) === -9);

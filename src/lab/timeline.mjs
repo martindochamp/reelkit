@@ -34,6 +34,16 @@
  * the case instead of choosing how to fail at it.
  */
 
+/**
+ * Milliseconds → frames, the way this engine has always rounded them.
+ *
+ * It lived in `render-reel.mjs` and now lives here, because the layout and
+ * the renderer must round identically or a parity render fails on a single
+ * frame somewhere in the middle and nobody knows why. One formula, one
+ * place — the same rule as `trackAt` and `motionAt`.
+ */
+export const msToFrames = (ms, fps = 30) => Math.round((ms / 1000) * fps);
+
 /** `"+4f"` → frames, `0.2` → seconds × fps, `"-0.3"` → seconds × fps. */
 export const offsetFrames = (offset, fps = 30) => {
   if (offset == null) return 0;
@@ -79,10 +89,9 @@ const ownerOf = (name) => String(name).split(".")[0];
  * @returns {Record<string, number>} edge name → frame
  */
 export const edgesOf = (beats, { fps = 30 } = {}) => {
-  // NOTE for phase 3: render-reel.mjs has its own `msToFrames`, and parity
-  // means rounding the same way it does. Reconcile the two before the
-  // renderer lays out through this rather than after.
-  const ms = (v) => Math.round((v / 1000) * fps);
+  // Reconciled 2026-09-14: the renderer's own rounding was the same formula
+  // character for character, so it moved here and render-reel.mjs calls this.
+  const ms = (v) => msToFrames(v, fps);
   const named = { "reel.start": 0 };
   let t = 0;
   let n = 0;

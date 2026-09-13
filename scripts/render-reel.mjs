@@ -51,6 +51,7 @@ import { sourcedReady as sourcedEffect } from "./sfx-import.mjs";
 import { config } from "./project.mjs";
 import { postsDir, projectDir } from "./stage.mjs";
 import { presetBank, resolvePresets } from "./presets.mjs";
+import { msToFrames as framesOfMs } from "../src/lab/timeline.mjs";
 import { warnTierList } from "./tier-legibility.mjs";
 import { forget, resolveVoice, speak } from "./tts.mjs";
 
@@ -271,7 +272,11 @@ if (names.length === 0) {
   process.exit(1);
 }
 
-const msToFrames = (ms) => Math.round((ms / 1000) * FPS);
+// One formula, one place: src/lab/timeline.mjs owns it, because the layout
+// and the renderer have to round identically or a parity render fails on one
+// frame in the middle and nobody knows why. The wrapper keeps every call site
+// in this file unchanged while there is only one definition left to drift.
+const msToFrames = (ms) => framesOfMs(ms, FPS);
 
 /** "1 word" / "4 words" — a tool that cannot count its own nouns reads
  *  as one that cannot count. */
