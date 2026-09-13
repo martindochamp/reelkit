@@ -17,7 +17,7 @@
 // that will not be tested.
 
 import { applyPreset, resolvePresets } from "./presets.mjs";
-import { motionAt, motionStyle } from "../src/lab/motion.mjs";
+import { motionAt, motionEnd, motionStyle } from "../src/lab/motion.mjs";
 
 let pass = 0, fail = 0;
 const ok = (label, cond, got) => {
@@ -582,6 +582,44 @@ ok("blur and brightness land in one filter",
      "blur(8px) brightness(0.4)");
 ok("a settled blur is dropped rather than written as blur(0px)",
    motionStyle({ blur: [8, 0], frames: 4 }, 4, {}).filter === undefined);
+
+// A COMBO is two properties on two clocks. Without per-property timing the
+// only "zoom in + fade" expressible is two identical spans, which is the one
+// version of it nobody uses.
+const combo = {
+  opacity: { to: 1, from: 0, frames: 6 },
+  scale: { from: 0.9, to: 1, frames: 14, delay: 2 },
+};
+ok("a short fade finishes while a longer zoom is still running",
+   motionAt(combo, 6, {}).opacity === 1 && motionAt(combo, 6, {}).scale < 1);
+ok("and the zoom lands on its own last frame",
+   Math.abs(motionAt(combo, 16, {}).scale - 1) < 1e-9);
+ok("a delayed property has not started before its delay",
+   motionAt({ scale: { from: 0.5, to: 1, frames: 10, delay: 5 } }, 5, {}).scale === 0.5);
+ok("a property's own ease beats the spec's",
+   motionAt({ x: { from: 0, to: 100, frames: 10, ease: "linear" }, frames: 10, ease: "out" }, 5, {}).x === 50);
+ok("and a property with no timing of its own still takes the spec's",
+   motionAt({ opacity: [0, 1], frames: 10, ease: "linear" }, 5, {}).opacity === 0.5);
+
+// `lead` is black time, and it must move the animation too — a lead that
+// only hid the element would show it mid-flight the frame it appears.
+ok("during the lead the element is not drawn at all",
+   motionStyle({ opacity: [0, 1], frames: 6, lead: 6 }, 3, {}).visibility === "hidden");
+ok("the entrance starts when the lead ends, not before",
+   motionAt({ opacity: [0, 1], frames: 6, lead: 6 }, 6, {}).opacity === 0);
+ok("and it lands a full span after the lead",
+   motionAt({ opacity: [0, 1], frames: 6, lead: 6 }, 12, {}).opacity === 1);
+
+// motionEnd is what lets a specimen run one second past its effect instead
+// of four: the sheet asks the engine when the effect is over.
+ok("an effect's end is its lead plus its span",
+   motionEnd({ opacity: [0, 1], frames: 6, lead: 6 }) === 12);
+ok("a combo ends with its LAST property, not its first",
+   motionEnd(combo) === 16);
+ok("an exit does not count towards it — it ends when the element does",
+   motionEnd({ opacity: [1, 0], at: "exit", frames: 8 }) === 0);
+ok("a move inside the beat counts from its own second",
+   motionEnd({ y: [0, -60], at: 1.2, frames: 12 }) === 48);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

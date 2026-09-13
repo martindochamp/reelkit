@@ -15,21 +15,35 @@
 // `mix-blend-mode` silently — the trap this codebase hit three times in one
 // day. An element that animates its OWN transform still blends with its
 // backdrop; a parent that animates on its behalf does not.
+//
+// EVERY PROPERTY OWNS ITS OWN CLOCK. A real combo is not one span driving
+// two properties: it is a short fade under a slightly longer zoom, each
+// starting when it wants to. So a property may carry `frames`, `delay`,
+// `ease` and `at` of its own, and falls back to the spec's when it does not.
+// Without that, "zoom in + fade" can only be written as two identical spans,
+// which is the one version of it nobody uses.
 
 /**
  * @typedef {"linear"|"in"|"out"|"inout"|{spring: {stiffness?: number, damping?: number}}} Ease
  *
+ * @typedef {[number, number] | number | {
+ *   from?: number, to: number,
+ *   frames?: number, delay?: number, ease?: Ease, at?: "enter"|"exit"|number,
+ * }} Prop
+ * `[from, to]`, a bare number (from the property's rest value), or an object
+ * carrying its own timing. The object form is what makes a combo a combo.
+ *
  * @typedef {{
- *   opacity?: [number, number], scale?: [number, number],
- *   x?: [number, number], y?: [number, number], rotate?: [number, number],
- *   blur?: [number, number], brightness?: [number, number],
- *   at?: "enter"|"exit"|number, frames?: number, ease?: Ease,
- *   split?: "none"|"line"|"word"|"char", stagger?: number,
+ *   opacity?: Prop, scale?: Prop, x?: Prop, y?: Prop, rotate?: Prop,
+ *   blur?: Prop, brightness?: Prop,
+ *   at?: "enter"|"exit"|number, frames?: number, delay?: number, ease?: Ease,
+ *   lead?: number, split?: "none"|"line"|"word"|"char", stagger?: number,
  *   origin?: string,
  * }} Motion
- * A property, from → to, over a span. `at` says what the span hangs off:
- * `"enter"` the element's arrival, `"exit"` its departure, a number the
- * seconds into its life. Everything else is a default.
+ * `at` says what a span hangs off: `"enter"` the element's arrival, `"exit"`
+ * its departure, a number the seconds into its life. `lead` holds the element
+ * HIDDEN for that many frames before anything starts — without it a zoom with
+ * no opacity sits there small and still, waiting, which is not an entrance.
  */
 
 /** The animatable properties. Anything else on a spec is configuration. */
@@ -85,32 +99,44 @@ export const curve = (ease) => {
 export const partDelay = (index = 0, stagger = 2) =>
   Math.max(0, Math.round(index * stagger));
 
+/** `[from, to]`, a number, or an object → `{from, to}` for that property. */
+const endsOf = (key, v) => {
+  if (Array.isArray(v)) return { from: v[0], to: v[1] };
+  if (v && typeof v === "object") return { from: v.from ?? REST[key], to: v.to };
+  return { from: REST[key], to: v };
+};
+
+/** One property's timing: its own where it has one, the spec's otherwise. */
+export const spanOf = (m, v) => {
+  const own = v && typeof v === "object" && !Array.isArray(v) ? v : {};
+  return {
+    at: own.at ?? m.at ?? "enter",
+    frames: Math.max(1, own.frames ?? m.frames ?? 7),
+    delay: (own.delay ?? m.delay ?? 0) + (m.lead ?? 0),
+    ease: own.ease ?? m.ease,
+  };
+};
+
 /**
  * The progress of one span at `frame`, 0 → 1.
  *
- * @param {Motion} m
+ * @param {{at: any, frames: number, delay: number, ease: any}} span
  * @param {number} frame frames since the element arrived
- * @param {{life?: number, index?: number, fps?: number}} ctx
- *   `life` is the element's whole span in frames — only `at: "exit"` needs it.
+ * @param {{life?: number, index?: number, fps?: number, stagger?: number}} ctx
  */
-export const progressAt = (m, frame, { life, index = 0, fps = 30 } = {}) => {
-  const span = Math.max(1, m.frames ?? 7);
-  const delay = partDelay(index, m.stagger ?? 2);
-  const at = m.at ?? "enter";
+export const progressOfSpan = (span, frame, { life, index = 0, fps = 30, stagger = 2 } = {}) => {
   let start;
-  if (at === "exit") {
+  if (span.at === "exit") {
     if (life == null) return 1; // nothing to hang an exit off: hold the end state
-    start = life - span;
-  } else if (typeof at === "number") {
-    start = at * fps;
+    start = life - span.frames;
+  } else if (typeof span.at === "number") {
+    start = span.at * fps;
   } else {
     start = 0;
   }
-  start += delay;
-  const t = (frame - start) / span;
-  const eased = curve(m.ease)(Math.min(1, Math.max(0, t)));
-  // An exit runs the other way: it ends at its `to`, having held `from`.
-  return at === "exit" ? eased : eased;
+  start += span.delay + partDelay(index, stagger);
+  const t = (frame - start) / span.frames;
+  return curve(span.ease)(Math.min(1, Math.max(0, t)));
 };
 
 /**
@@ -123,15 +149,39 @@ export const progressAt = (m, frame, { life, index = 0, fps = 30 } = {}) => {
  */
 export const motionAt = (m, frame, ctx = {}) => {
   if (!m || typeof m !== "object") return {};
-  const p = progressAt(m, frame, ctx);
   const out = {};
   for (const key of PROPS) {
     const v = m[key];
     if (v == null) continue;
-    const [from, to] = Array.isArray(v) ? v : [REST[key], v];
+    const { from, to } = endsOf(key, v);
+    const p = progressOfSpan(spanOf(m, v), frame, { ...ctx, stagger: m.stagger ?? 2 });
     out[key] = from + (to - from) * p;
   }
   return out;
+};
+
+/**
+ * The frame the last ARRIVING span finishes — what a specimen's length is
+ * measured from, so a clip can run exactly one second past its effect
+ * instead of four. Exits are not counted: they end when the element does.
+ *
+ * Returns 0 for a spec that only leaves or only moves later.
+ */
+export const motionEnd = (m, { index = 0 } = {}) => {
+  if (!m || typeof m !== "object") return 0;
+  let end = 0;
+  for (const key of PROPS) {
+    const v = m[key];
+    if (v == null) continue;
+    const span = spanOf(m, v);
+    if (span.at === "exit") continue;
+    const start =
+      (typeof span.at === "number" ? span.at * 30 : 0) +
+      span.delay +
+      partDelay(index, m.stagger ?? 2);
+    end = Math.max(end, start + span.frames);
+  }
+  return Math.round(end);
 };
 
 /**
@@ -142,6 +192,15 @@ export const motionAt = (m, frame, ctx = {}) => {
  * finds by looking at a frame.
  */
 export const motionStyle = (m, frame, ctx = {}) => {
+  if (!m || typeof m !== "object") return {};
+  // `lead` is black time: the element is not there yet. Held as visibility
+  // so the layout underneath never moves when it arrives.
+  const lead = m.lead ?? 0;
+  // The literal is pinned rather than left as `string`: React's CSSProperties
+  // types `visibility` as a union, and a widened string fails the build.
+  if (lead > 0 && frame < lead) {
+    return { visibility: /** @type {"hidden"} */ ("hidden") };
+  }
   const v = motionAt(m, frame, ctx);
   if (Object.keys(v).length === 0) return {};
   const style = {};
