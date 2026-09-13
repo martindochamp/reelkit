@@ -63,6 +63,21 @@ project that writes its own `hard-card` has decided the core one is wrong
 for it, and silently ignoring that would be the worse surprise. Same rule as
 the element bank, for the same reason.
 
+## Where `_measured` points, and why some of it is not here
+
+A `_measured` line names the teardown a value came from, and several of them
+cite `research/…`. **That directory is deliberately not in this repo.** It
+holds frame-by-frame teardowns of other people's published reels, named
+creators included, and this repo is public: the analysis stays in a private
+working directory rather than being republished alongside the engine.
+
+So a citation is a provenance record, not a link you can follow from a clone.
+It says the number was measured, on what, and by whom — and it stays in the
+file for the same reason it was written down at all: a value nobody can trace
+is a style opinion wearing a measurement's clothes. A preset whose numbers are
+NOT measured says so in its own words instead; the eleven motion presets all
+do.
+
 ## Writing one
 
 One file, named for the preset. Say where the numbers came from — a preset
