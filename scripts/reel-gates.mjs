@@ -97,19 +97,37 @@ const plural = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
 const countWords = (s) => (s ?? "").replace(/\[\+\]/g, " ").split(/\s+/).filter(Boolean).length;
 
 /**
- * Seconds a silent beat holds — the same defaults render-reel.mjs applies,
- * because a 1.5-second endcard is 4 % of the reel and a budget that
- * ignores it is wrong by exactly that much.
+ * Every screen a beat shows — one `screen`, or one per shot.
+ *
+ * A beat that cuts under its own spoken line carries `shots` instead of a
+ * `screen`, and every audit in this file reads `beat.screen`. Without this
+ * they would all quietly see nothing and pass a beat they had not looked at,
+ * which is the exact failure shape this file exists to prevent.
+ */
+export const screensOf = (beat) =>
+  (beat.shots ? beat.shots.map((s) => s.screen) : [beat.screen]).filter(Boolean);
+
+/**
+ * Seconds a beat holds with nobody speaking — the same defaults
+ * render-reel.mjs applies, because a 1.5-second endcard is 4 % of the reel
+ * and a budget that ignores it is wrong by exactly that much.
+ *
+ * `hold` means the same thing on a spoken beat: silent frames after the line
+ * lands. A beat that speaks and holds costs the budget both.
  */
 const holdSeconds = (beat) =>
-  beat.hold != null ? beat.hold : beat.screen?.type === "endcard" ? 1.5 : 2;
+  beat.say
+    ? (beat.hold ?? 0)
+    : beat.hold != null
+      ? beat.hold
+      : screensOf(beat)[0]?.type === "endcard"
+        ? 1.5
+        : 2;
 
 export const budgetAudit = (beats) => {
   const per = beats.map((b) => countWords(b.say));
   const words = per.reduce((a, b) => a + b, 0);
-  const silent = beats
-    .filter((b) => !b.say)
-    .reduce((s, b) => s + holdSeconds(b), 0);
+  const silent = beats.reduce((s, b) => s + holdSeconds(b), 0);
 
   const sentences = beats.reduce((n, b) => n + countSentences(b.say), 0);
   const speech = SEC_PER_WORD * words + SEC_PER_SENTENCE * sentences;
@@ -333,7 +351,7 @@ const keywordIn = (text) =>
 
 export const gateAudit = (name, beats) => {
   const onScreen = beats
-    .map((b) => b.screen)
+    .flatMap(screensOf)
     .filter((el) => el?.type === "endcard" || el?.type === "cta")
     .flatMap((el) => [el.line, ...(el.lines ?? [])])
     .filter(Boolean)
@@ -361,50 +379,56 @@ export const gateAudit = (name, beats) => {
 
 export const proseAudit = (beats) => {
   const found = [];
-  const at = (i, msg) => found.push(`beat ${i + 1}: ${msg}`);
+  const at = (where, msg) => found.push(`${where}: ${msg}`);
 
   beats.forEach((beat, i) => {
-    const el = beat.screen ?? {};
-    // Running prose — everything that is a sentence rather than a datum,
-    // at any depth.
-    const prose = proseIn(el).join(" ");
-    const n = countWords(prose);
-    if (n > BEAT_PROSE_WORDS) {
-      at(i, `${n} words of prose on screen (budget ${BEAT_PROSE_WORDS}). ` +
-        `Take out whatever the voice already says — if the beat still means ` +
-        `the same thing without a line, the line was decoration.`);
-    }
-    const line = el.line ?? el.props?.line;
-    const kicker = el.kicker ?? el.props?.kicker;
-    if (line && countWords(line) > LINE_WORDS) {
-      at(i, `\`line\` is ${countWords(line)} words — it is a caption, not a ` +
-        `sentence: "${line}"`);
-    }
-    if (kicker && countWords(kicker) > KICKER_WORDS) {
-      at(i, `\`kicker\` is ${countWords(kicker)} words — a kicker is a label: ` +
-        `"${kicker}"`);
-    }
-
-    if (el.type === "title") {
-      at(i, `the \`title\` element is a slideshow element. A reel beat shows ` +
-        `an instrument, a specimen or real footage — the voice carries the ` +
-        `words (REELS.md, "The screen carries no prose").`);
-    }
-    if (el.type === "lab" && el.element === "bullets") {
-      at(i, `text-only \`bullets\` is a slideshow element, same rule as \`title\`.`);
-    }
-
-    for (const row of [...(el.rows ?? []), ...(el.total ? [el.total] : [])]) {
-      if (!isNumeric(row.right)) {
-        at(i, `table row "${row.left}" has no number in its right column ` +
-          `("${row.right}"). A right column is a measurement — a phrase there ` +
-          `is the voice's job, and it has shipped twelve times.`);
+    // Every picture the beat shows, judged on its own: a shot is a screen,
+    // and a screen printing the sentence the voice is saying is the defect
+    // this audit exists for wherever it sits.
+    screensOf(beat).forEach((screen, k) => {
+      const el = screen ?? {};
+      const where = beat.shots ? `beat ${i + 1} shot ${k + 1}` : `beat ${i + 1}`;
+      // Running prose — everything that is a sentence rather than a datum,
+      // at any depth.
+      const prose = proseIn(el).join(" ");
+      const n = countWords(prose);
+      if (n > BEAT_PROSE_WORDS) {
+        at(where, `${n} words of prose on screen (budget ${BEAT_PROSE_WORDS}). ` +
+          `Take out whatever the voice already says — if the beat still means ` +
+          `the same thing without a line, the line was decoration.`);
       }
-      if ((row.left ?? "").length > ROW_LABEL_CHARS) {
-        at(i, `table label is ${row.left.length} characters ` +
-          `(max ${ROW_LABEL_CHARS}): "${row.left}"`);
+      const line = el.line ?? el.props?.line;
+      const kicker = el.kicker ?? el.props?.kicker;
+      if (line && countWords(line) > LINE_WORDS) {
+        at(where, `\`line\` is ${countWords(line)} words — it is a caption, not a ` +
+          `sentence: "${line}"`);
       }
-    }
+      if (kicker && countWords(kicker) > KICKER_WORDS) {
+        at(where, `\`kicker\` is ${countWords(kicker)} words — a kicker is a label: ` +
+          `"${kicker}"`);
+      }
+
+      if (el.type === "title") {
+        at(where, `the \`title\` element is a slideshow element. A reel beat shows ` +
+          `an instrument, a specimen or real footage — the voice carries the ` +
+          `words (REELS.md, "The screen carries no prose").`);
+      }
+      if (el.type === "lab" && el.element === "bullets") {
+        at(where, `text-only \`bullets\` is a slideshow element, same rule as \`title\`.`);
+      }
+
+      for (const row of [...(el.rows ?? []), ...(el.total ? [el.total] : [])]) {
+        if (!isNumeric(row.right)) {
+          at(where, `table row "${row.left}" has no number in its right column ` +
+            `("${row.right}"). A right column is a measurement — a phrase there ` +
+            `is the voice's job, and it has shipped twelve times.`);
+        }
+        if ((row.left ?? "").length > ROW_LABEL_CHARS) {
+          at(where, `table label is ${row.left.length} characters ` +
+            `(max ${ROW_LABEL_CHARS}): "${row.left}"`);
+        }
+      }
+    });
   });
   return found;
 };
@@ -420,8 +444,10 @@ export const proseAudit = (beats) => {
 // animations, c'était toujours les mêmes ou pas terrible."
 
 export const shapeOf = (beats) =>
-  beats.map((b) =>
-    b.screen?.type === "lab" ? `lab:${b.screen.element}` : (b.screen?.type ?? "?"),
+  beats.flatMap((b) =>
+    screensOf(b).map((el) =>
+      el?.type === "lab" ? `lab:${el.element}` : (el?.type ?? "?"),
+    ),
   );
 
 /** How often each element appears across every reel in posts/, this one aside. */
@@ -458,7 +484,10 @@ export const shapeAudit = (name, beats) => {
 
   const repeated = Object.entries(
     shape.reduce((m, k) => ({ ...m, [k]: (m[k] ?? 0) + 1 }), {}),
-  ).filter(([k, n]) => n > 2 && k !== "media");
+    // `media` is real footage and `blank` is the absence of an element —
+    // neither is a format tic, and a warning that fires on them trains you
+    // to scroll past the ones that mean something.
+  ).filter(([k, n]) => n > 2 && k !== "media" && k !== "blank");
   for (const [k, n] of repeated) {
     warnings.push(`${k} appears ${n} times in one reel — that is the format, not a beat`);
   }

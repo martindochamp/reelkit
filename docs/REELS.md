@@ -163,19 +163,116 @@ file, one brief), but the text is written fresh:
   it is spoken, and prints the element's next part. Cue **every** part or
   **none** (none = the whole element is on the paper from the cut); a
   partial cueing would print out of order and the renderer refuses it.
-- A beat without `say` holds silently (`hold` in seconds, default 2 —
-  1.5 for an `endcard`, and the trimmed length of an unmuted `media`
-  excerpt).
+- **`hold` is silent frames after the voice stops**, in seconds. On a
+  beat with no `say` that is the whole beat (default 2 — 1.5 for an
+  `endcard`, and the trimmed length of an unmuted `media` excerpt). On a
+  beat that DOES speak it is added after the line lands, so a shot can
+  sit on its last word. The references spend most of each card's screen
+  time exactly there: a faithful reproduction of a 7.0 s reference ran
+  14.8 s, 2.1× over, because every silent hold it uses was unexpressible.
+  A hold costs the budget the same as spoken seconds, and the audit
+  counts it.
 - **The voice never stops.** Beat length is derived: the line starts on
-  the cut and the beat ends 0.12 s after its last syllable, so beats
-  read as one continuous stream. A second of silence between beats is
-  where viewers leave — only widen the tail for a beat that genuinely
-  needs the air, and say why.
+  the cut and the beat ends 0.2 s after its last syllable (plus any
+  `hold`), so beats read as one continuous stream. A second of unasked
+  silence between beats is where viewers leave — only widen the tail for
+  a beat that genuinely needs the air, and say why.
+
+### `shots` — several pictures under one spoken line
+
+One beat = one spoken line. It does **not** have to be one picture. A
+beat with `shots` instead of `screen` cuts its stage on its own schedule
+while the line, the caption band and the camera run underneath, unbroken:
+
+```json
+{
+  "say": "Do not assume. Try it first, then write it off.",
+  "shots": [
+    { "screen": { "type": "media", "file": "bar.mp4", "fit": "bleed" }, "seconds": 1.2 },
+    { "screen": { "type": "blank" }, "bg": "street.jpg",
+      "border": { "color": "#FFFFFF", "width": 8, "inset": 70, "radius": 0 } },
+    { "screen": { "type": "stat", "value": "3" }, "border": null, "weight": 2 }
+  ]
+}
+```
+
+- A shot takes `seconds` for an exact length, or `weight` for a share of
+  whatever the voice leaves (default 1 — three plain shots are thirds).
+  The shots **tile the beat exactly**: the last weighted one absorbs the
+  rounding. Asking for more seconds than the beat runs is refused, and so
+  is a shot that would land under one frame.
+- A shot carries its own `screen`, its own `bg` and its own `border`.
+  The beat keeps `say`, `hold`, `sound` and `view` — the camera move is
+  continuous across the cuts, which is the point of it.
+- **`[+]` does not work on a shots beat** and is refused: a marker prints
+  a part of *the* screen and there are several. A shot names its own
+  `cues` instead, in **seconds into that shot**, exactly as a silent beat
+  does.
+- `place` is never a shot. A placed item outlives its beat by definition;
+  a shot ends at the next cut. It stays a beat of its own.
+- The caption band follows the picture actually under it, so a beat that
+  mixes a white page and a photograph stays readable across the cut.
+
+### `bed` — the ground the reel sits on
+
+A looping video under everything, on its own clock. Not a background: a
+background belongs to a beat and is repainted at every cut, and a bed keeps
+running while beats cut over it.
+
+```json
+"bed": [
+  { "file": "mesh.mp4", "at": 0 },
+  { "file": "filaments.mp4", "at": 6 }
+]
+```
+
+Files live in `posts/beds/`. Each entry names the second it takes over at; a
+bed runs until the next one starts, and the last to the end of the reel.
+`opacity` is optional. A single object works where there is only one.
+
+**A beat only sees it by declining to paint: `"bg": "bed"`.** Every other
+mode fills the frame opaquely and hides it, which is the one way a bed fails
+silently — so a staged bed that no beat asks for prints a warning.
+
+Two things about the asset, both measured rather than assumed:
+
+- **Make it seamless before it gets here.** A hard loop shows a seam every
+  cycle; the best candidate tested differed by 29 mean luma between its last
+  frame and its first. Ping-ponging the clip (forward, then reversed)
+  removes the seam by construction and doubles the usable length.
+- **Check it does not open on black and is not a still.** One candidate was
+  5 s long, frozen after 2 s, and opened on a black frame, so every loop
+  restart flashed. `research/2026-09-08/backgrounds/bed-screen.py` screens a
+  candidate on duration, motion, first frame, loop seam and its luminance
+  profile; `BEDS.md` beside it says why grading cannot rescue a wrong clip.
+
+The bed exists because a talking-head reference swaps four unrelated loops
+across 179 s and changes them **mid-sentence** — the picture behind a
+speaker is not tied to what he is saying, which is the same finding `shots`
+exists for, one layer further down.
+
+### `preset` — a named fragment merged under a node
+
+A reel, a beat or a shot may name one: `"preset": "photo-card"`, or a list.
+The named fragment merges UNDER the node, so the node's own keys always win.
+`reelkit presets` prints the bank. PRESETS.md owns the rules — including why
+a preset can never write `say`, and why most of what the reference teardowns
+found belongs in `elements/` instead.
+
+### `border` — the frame rule, per beat or per shot
+
+`chrome.border` draws one rule around the whole reel. A beat or a shot may
+disagree: `"border": {…}` overrides it, `"border": null` draws none. The
+references change it per shot — a dark rule on a paper card, a white one
+on a photograph — and one colour for a whole reel measured barely legible
+on every photo beat of a reproduction. A post that names no override
+renders exactly as it did before this existed.
 
 ### Screen elements and their parts
 
 | type | fields | parts (in cue order) |
 |---|---|---|
+| `blank` | — | 0 — nothing to print, so nothing to cue |
 | `title` | `text` (`*…*` = Heavy), `kicker?`, `sub?` | 1 — the whole block |
 | `figure` | `image` + img2ascii tuning, `kicker?`, `title?`, `value?`, `line?` | 2 — the art, then the row |
 | `clip` | `file` (posts/clips/), same tuning + `crop?`, same row fields | 2 — the clip, then the row |
@@ -491,6 +588,22 @@ makes it land rather than merely stop.
 ```json
 "reel": { "captions": "words", … }
 ```
+
+**`*emphasis*` — how hard the writer hit the word.** Marking a word in the
+spoken line paints it in the skin's accent colour; the asterisks are
+stripped before the voice ever sees them. The COUNT is a level: `*word*`
+is 1, `**word**` is 2, `***word***` is 3, and a level past the end of the
+skin's list clamps to the last one. What each level looks like is the
+skin's call, not the writer's (`theme.captions.emphasis` — CONFIG.md):
+colour, `scale` (a real font size, so the line box grows around the word
+rather than the glyph riding over its neighbours) and `outline` (a hollow
+glyph, stroke only). Measured need: one reference sentence holds a word in
+gold and another at 2.6× cap height as an outline, in the same band. A
+run spans words — `*two words*` marks both.
+
+The choice follows the VOICE's stress, so it is the writer's: the same
+word is gold in one sentence and plain in the next, and no rule can infer
+that.
 
 ```
 npm run reel <post> -- --captions bump    # audition, the post is untouched

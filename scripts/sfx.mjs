@@ -581,17 +581,47 @@ export const buildSfx = (beats, sfx, fps, { preferSynth = false } = {}) => {
   // Alternating variants: a run of identical samples reads as a loop.
   let prints = 0;
   let from = 0;
+  // A beat shows one picture or several, and a sound belongs to the picture
+  // that makes it — so the element pass runs per SHOT, on the shot's own
+  // start and its own length. A beat's reaction sound stays the beat's: it
+  // marks the cut into the beat, not any one picture inside it.
+  const pictures = [];
   for (const beat of beats) {
     const start = from;
     from += beat.durationInFrames;
+    if (beat.shots) {
+      for (const shot of beat.shots) {
+        pictures.push({
+          beat,
+          start: start + shot.startFrame,
+          durationInFrames: shot.durationInFrames,
+          element: shot.element,
+          cueFrames: shot.cueFrames ?? [],
+          reaction: shot === beat.shots[0] ? beat.sound : null,
+        });
+      }
+    } else {
+      pictures.push({
+        beat,
+        start,
+        durationInFrames: beat.durationInFrames,
+        element: beat.element,
+        cueFrames: beat.cueFrames ?? [],
+        reaction: beat.sound,
+      });
+    }
+  }
+  for (const picture of pictures) {
+    const start = picture.start;
 
     // A REACTION sound belongs to the beat, not to an element part. The
     // event it marks is the cut itself — the moment the viewer sees the
     // thing the reel is reacting to — so it fires on the beat's first
     // frame and takes no [+]. `sound: "cave"` on the beat, or
     // `sound: { name, at, volume }` to place it a beat later or duck it.
-    if (beat.sound) {
-      const spec = typeof beat.sound === "string" ? { name: beat.sound } : beat.sound;
+    if (picture.reaction) {
+      const spec =
+        typeof picture.reaction === "string" ? { name: picture.reaction } : picture.reaction;
       hits.push({
         name: spec.name,
         frame: start + Math.round((spec.at ?? 0) * fps),
@@ -604,10 +634,10 @@ export const buildSfx = (beats, sfx, fps, { preferSynth = false } = {}) => {
     // frame a pour crosses a line, none of which a cue list carries.
     // The map stays for elements with no emitter, and a post's own
     // `sfx.map` override still beats both.
-    const key = elementKey(beat.element);
+    const key = elementKey(picture.element);
     const emitted =
       opts.map?.[key] === undefined
-        ? emitFor(beat.element, beat.cueFrames ?? [], fps)
+        ? emitFor(picture.element, picture.cueFrames ?? [], fps)
         : null;
     if (emitted?.length) {
       for (const hit of emitted) {
@@ -617,8 +647,8 @@ export const buildSfx = (beats, sfx, fps, { preferSynth = false } = {}) => {
         // would play over the next one — a counter still ratcheting under
         // a photograph. Drop it and say so: the fix is the beat's `hold`,
         // and the same overrun is cutting the animation off visually.
-        if (hit.frame >= beat.durationInFrames) {
-          overruns.push(`${key} (${hit.sound} at ${hit.frame}f of ${beat.durationInFrames}f)`);
+        if (hit.frame >= picture.durationInFrames) {
+          overruns.push(`${key} (${hit.sound} at ${hit.frame}f of ${picture.durationInFrames}f)`);
           continue;
         }
         hits.push({
@@ -633,7 +663,7 @@ export const buildSfx = (beats, sfx, fps, { preferSynth = false } = {}) => {
 
     const fn = map[key];
     if (!fn) continue;
-    for (const hit of fn(beat.cueFrames ?? [], beat.element)) {
+    for (const hit of fn(picture.cueFrames ?? [], picture.element)) {
       if (!hit) continue;
       let name = hit.sound;
       // The two-seed alternation exists so a run of seven identical

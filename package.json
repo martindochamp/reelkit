@@ -21,12 +21,14 @@
     "src",
     "scripts",
     "docs",
+    "presets",
     "templates",
     "tsconfig.json",
     "remotion.config.ts"
   ],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/presets.test.mjs"
   },
   "dependencies": {
     "@remotion/bundler": "4.0.493",

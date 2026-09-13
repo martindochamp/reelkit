@@ -16,8 +16,11 @@ import { bundle } from "@remotion/bundler";
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { config, elementsDir, genDir, kitDir, projectDir, publicDir } from "./project.mjs";
+import { CAPTION_DEFAULTS, CAPTION_FACE, SAFE_DEFAULTS } from "../src/lab/subtitles.mjs";
 
 const INKS = ["paper", "ink", "faded", "trace"];
+const DEFAULT_MONO =
+  '"SF Mono", "SFMono-Regular", ui-monospace, Menlo, Monaco, monospace';
 
 /**
  * Writes .reelkit/theme.ts from the config, or returns null when the project
@@ -61,8 +64,38 @@ const writeTheme = () => {
         {
           palettes: theme.palettes,
           brand: { wordmark: theme.brand?.wordmark ?? null },
-          mono: theme.mono ?? '"SF Mono", "SFMono-Regular", ui-monospace, Menlo, Monaco, monospace',
+          mono: theme.mono ?? DEFAULT_MONO,
+          // Every face falls back to `mono`, so a project that themes nothing
+          // renders byte-identically to the version before these existed.
+          fonts: {
+            display: theme.fonts?.display ?? theme.mono ?? DEFAULT_MONO,
+            body: theme.fonts?.body ?? theme.mono ?? DEFAULT_MONO,
+            // The caption band alone does NOT fall back to `mono`. The
+            // measured look is a sans, the receipt idiom lives in the
+            // elements rather than in the words the voice is saying, and
+            // theme.default.ts has said so since the promotion — while this
+            // line quietly handed SF Mono to every themed project. A project
+            // that wants monospaced captions names the face.
+            caption: theme.fonts?.caption ?? CAPTION_FACE,
+          },
+          // THE caption default lives in src/lab/subtitles.mjs, and this line
+          // is the whole of what used to be twenty here.
+          //
+          // What was here was a second copy of it — `?? 48`, `?? 400`,
+          // `?? "uppercase"`, `?? true`, the receipt look — and when the
+          // measured look was promoted into theme.default.ts on 2026-09-09
+          // this copy was not touched. theme.default.ts is what a project
+          // with NO theme gets; this is what every project that HAS one
+          // gets. So the promotion reached nothing real: every themed
+          // project kept rendering 48/400/uppercase in SF Mono while the
+          // repo believed it had shipped 66/700 in a sans.
+          //
+          // A project still overrides any single key, and one that wants the
+          // receipt caption back says so — `.parity` does, because that
+          // fixture exists to render a TALLY post like Tally.
+          captions: { ...CAPTION_DEFAULTS, ...(theme.captions ?? {}) },
           hairline: theme.hairline ?? 3,
+          safe: { ...SAFE_DEFAULTS, ...(theme.safe ?? {}) },
         },
         null,
         2,

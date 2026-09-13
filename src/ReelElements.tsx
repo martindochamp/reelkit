@@ -30,6 +30,9 @@ import { ThresholdMeter } from "./lab/ThresholdMeter";
 import { TierList, tierListParts } from "./lab/TierList";
 import { Timeline } from "./lab/Timeline";
 import { UnitGrid } from "./lab/UnitGrid";
+import { DynamicBackground } from "./lab/DynamicBackground";
+import { Footage, type FootageSpec } from "./lab/Footage";
+import { Cutout } from "./lab/Cutout";
 
 /**
  * The lab registry — every animated element the agents built, exposed to
@@ -54,6 +57,37 @@ const CORE_REGISTRY: Record<
     mapCues: (cues: number[], props: any) => object;
   }
 > = {
+  /**
+   * The ground, as an element. It is normally a beat's `field` and sits
+   * UNDER everything; registering it here is what makes `reelkit lab dynbg`
+   * and a backgrounds-only reel possible without a second code path.
+   */
+  dynbg: {
+    component: DynamicBackground,
+    mapCues: () => ({}),
+  },
+  /**
+   * The footage box, as an element. Same reason as `dynbg`: it is normally a
+   * beat's or shot's `{ type: "footage" }` screen, and registering it here is
+   * what makes `reelkit lab footage --props '{"spec":{"preset":"card",...}}'`
+   * a way to see ONE box's geometry — a preset contact sheet, no voice, no
+   * post — instead of a reel that has to be written first.
+   */
+  footage: {
+    component: Footage,
+    mapCues: () => ({}),
+  },
+  /**
+   * The cutout, as an element. It is normally a layer — `reel.cutout` or
+   * `beat.cutout` — because a person sits OVER the beat's picture and an
+   * element IS that picture. Registered here for the same reason `dynbg` is:
+   * `reelkit lab cutout --props '{"spec":{"file":"me-matte.webm","preset":"reaction"}}'`
+   * shows one placement alone, with no post to write and no staging to run.
+   */
+  cutout: {
+    component: Cutout,
+    mapCues: () => ({}),
+  },
   unitgrid: {
     component: UnitGrid,
     mapCues: (c) => ({
@@ -213,11 +247,35 @@ export const LabFrame: React.FC<{
  *   printed CARD lying on the scene (always warm paper + ink — a receipt
  *   is physical paper, it has no dark mode), titles become boxed lines.
  * - "ink"    — solid ink; paper-colored type. The inverted beat.
+ * - "bed"    — nothing at all. The reel's bed shows through.
+ *
+ * "bed" is the only mode that paints NOTHING. Every other mode fills the
+ * frame opaquely, which is why a bed under an ordinary beat is invisible:
+ * the beat covers it. A beat that wants the bed says so.
  */
 
-export type StageMode = "paper" | "photo" | "ink";
+export type StageMode = "paper" | "photo" | "ink" | "bed";
 
 export type ReelElementSpec =
+  | {
+      /**
+       * Nothing on the stage. The background, the frame rule and the
+       * caption band, and no element at all.
+       *
+       * Every beat used to need a real element, so a shot whose whole
+       * content is "the picture behind it and the words being said" had to
+       * borrow one — and the nearest borrowable thing, `title`, prints the
+       * sentence a second time in a headline while the band builds it word
+       * by word underneath. Two reproductions came out with that redundant
+       * double text layer and both gap lists named it. This is the escape
+       * hatch: a screen that draws nothing, so the beat is its ground and
+       * its voice.
+       *
+       * One part, and nothing to print on it — a `[+]` on a blank beat is
+       * a cue with no addressee.
+       */
+      type: "blank";
+    }
   | {
       /** One typographic statement — the hook, the turn. One part. */
       type: "title";
@@ -314,6 +372,19 @@ export type ReelElementSpec =
        *
        * Two parts: the media, then the receipt row under it.
        */
+      type: "footage";
+      /**
+       * A shaped, placed window onto moving pictures — preset, ratio,
+       * radius, anchor, keyframe tracks and the spill. See docs/FOOTAGE.md.
+       *
+       * It sits beside `media` rather than replacing it: `media` is one
+       * credited excerpt drawn on the paper, this is a box that can be any
+       * shape anywhere and can be animated. The overlap is deliberate and
+       * `media` is the one that should eventually go.
+       */
+      spec: FootageSpec;
+    }
+  | {
       type: "media";
       /** A file in posts/media/ — .mp4/.mov, or .jpg/.png. */
       file: string;
@@ -406,6 +477,10 @@ export type ReelElementSpec =
 /** How many cue-able parts an element exposes, in reading order. */
 export const elementParts = (el: ReelElementSpec): number => {
   switch (el.type) {
+    // Nothing to print, so nothing to cue: a `[+]` on a blank screen is a
+    // marker with no addressee, and the count guard refuses it by arithmetic.
+    case "blank":
+      return 0;
     case "figure":
     case "clip":
     case "recording":
@@ -1034,6 +1109,13 @@ const Element: React.FC<{
       );
     }
 
+    case "footage":
+      // The box owns the whole frame and places itself inside it — it does
+      // not sit on the stage's column like the drawn elements do, because a
+      // "full" box has to reach the canvas edge and the stage's margins
+      // exist to stop type from doing that.
+      return <Footage spec={element.spec} />;
+
     case "media": {
       // Everything else on this stage is 48 to 72 glyphs a line. This one
       // is the real thing at full resolution, and the contrast is the
@@ -1315,6 +1397,11 @@ export const Stage: React.FC<{
   theme: "light" | "dark";
   mode: StageMode;
 }> = ({ element, cueFrames, theme, mode }) => {
+  // Nothing on the stage. Not a no-op with a placeholder in it and not an
+  // empty card: no node at all, so the beat's ground, its frame rule and
+  // its caption band are the whole picture.
+  if (element.type === "blank") return null;
+
   // The mockup owns the whole frame and says nothing — it rises from the
   // bottom edge while the voice delivers the ask.
   if (element.type === "mockup") {

@@ -3,3 +3,4 @@ out/
 .reelkit/
 .env
 .parity/
+.DS_Store

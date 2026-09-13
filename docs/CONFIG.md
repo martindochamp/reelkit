@@ -26,6 +26,15 @@ export default {
       dark:  { paper, ink, faded, trace },
     },
     mono: "…",
+    fonts: { display: null, body: null, caption: null },
+    captions: {
+      fontSize: 48, fontWeight: 400, letterSpacing: "0.08em",
+      textTransform: "uppercase", plate: true,
+      maxWords: 3, maxChars: 20,
+      dim: null, bandTop: 1180,
+      emphasisColor: null,
+      emphasis: null,
+    },
     hairline: 3,
   },
 
@@ -61,7 +70,21 @@ export default {
 | `brand.wordmark` | The word the wordmark elements draw. **Unset it prints a visible defect**, not nothing — a placeholder that renders cleanly is how a post ships with the generator's leftovers on it. Written as the product writes it; the elements uppercase it themselves. |
 | `palettes.{light,dark}` | The four inks, both modes, all four required. The names are semantic: `paper` is whatever the page is, `ink` is whatever the type is. A dark-first project swaps the values, never the names. A missing ink is refused at bundle time, because CSS reads `undefined` as "inherit" and the frame comes out subtly wrong rather than loudly broken. |
 | `mono` | A CSS font stack. Numbers live in it, so it must be monospaced. Referenced by name, never bundled. |
+| `fonts.{display,body,caption}` | The three faces — headlines and numerals, running text, the spoken band. Each falls back to `mono`, so a project that sets none renders exactly as it did before they existed. One face cannot carry a display line and a caption at once, which is why a project could change its colours and still look like the one it was forked from. |
+| `captions` | How the spoken band is set. See below. |
 | `hairline` | Rule weight in canvas pixels. Every rule in the system derives from this one number. |
+
+### theme.captions — the skin's loudest single decision
+
+| field | |
+|---|---|
+| `fontSize` / `fontWeight` / `letterSpacing` / `textTransform` | The band's type. The defaults are the receipt look: 48 px, tracked, uppercase. |
+| `plate` | Draw the band's own ground, or let the words sit on the page alone. Plateless words carry their own separation — the page's colour spread behind them over a flat page, a dark shadow over pictures — and they take the page's own ink, never a literal white. Hardcoding white here once made every caption on a paper beat invisible. |
+| `maxWords` / `maxChars` | How much of the sentence stands at once. `1` is the one-word-at-a-time reference; `8`/`44` is the long accreting line. |
+| `dim` | Brightness of a word not yet spoken, 0–1. Unset, an unspoken word is invisible but holds its space and the sentence assembles itself. Set (0.42 measured) and the whole line stands from the first frame, dimmed, each word lighting up on its cue — which lets the viewer read ahead. |
+| `bandTop` | Where the band sits, in canvas pixels. 1180 of 1920 clears a presenter card and the platform's own bottom chrome; a reel with no card puts its captions much higher (46 % measured). |
+| `emphasisColor` | The colour of a word marked `*like this*`. Covers one level and nothing else. |
+| `emphasis` | What each level of emphasis LOOKS like, indexed by asterisk count: `[{color, scale, outline}, …]`. `*word*` takes the first entry, `**word**` the second; a level past the end clamps to the last. `scale` is a real font size, so the line box grows around the word instead of the glyph riding over its neighbours; `outline` is a stroke width in pixels with a transparent fill. Unset, every marked word gets `emphasisColor`, which is what every project had before this list existed. |
 
 Pull the colours from the real product — the app, the site, the logo. A palette
 invented for the videos is a second brand, and the account then argues with the

@@ -9,6 +9,7 @@
 //   reelkit audit <post>          the writing audits, no render, no TTS call
 //   reelkit gates [word]          the comment-keyword registry
 //   reelkit elements              the merged element bank
+//   reelkit presets               the merged preset bank
 //
 // Every command resolves the project by walking up from the working directory
 // to reel.config.mjs (scripts/project.mjs). The engine itself lives wherever
@@ -45,6 +46,7 @@ const COMMANDS = {
   cover: "render-cover.mjs",
   lab: "lab.mjs",
   gates: "gates.mjs",
+  presets: "presets.mjs",
   demo: "build-demo.mjs",
   sfx: "sfx.mjs",
   "sfx:import": "sfx-import.mjs",

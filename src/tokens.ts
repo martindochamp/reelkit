@@ -26,6 +26,23 @@ export const darkTokens: Palette = theme.palettes.dark;
 export const mono = theme.mono;
 
 /**
+ * The three faces, and the caption setting.
+ *
+ * `mono` above is kept and still exported: every existing element imports it
+ * by that name, and the generated theme falls all three faces back to it, so
+ * nothing that has not opted in changes. New work should reach for `fonts`.
+ */
+export const fonts = theme.fonts;
+export const captionStyle = theme.captions;
+
+/**
+ * The accent, or null. Null is the honest answer for a project that has not
+ * named one — an element must fall back to `ink` rather than invent a colour.
+ */
+export const accent = (mode: "light" | "dark"): string | null =>
+  theme.palettes[mode].accent ?? null;
+
+/**
  * The word the wordmark elements draw.
  *
  * Unset it prints a visible defect rather than nothing. A blank wordmark
@@ -36,6 +53,13 @@ export const mono = theme.mono;
 export const wordmark = (): string =>
   theme.brand?.wordmark ?? "◻ SET brand.wordmark";
 export const hairline = theme.hairline;
+
+/**
+ * The frame's margins. One variable, read by the caption band — and the
+ * number the stage's own table in ReelElements.tsx should eventually be
+ * derived from, which it is not yet.
+ */
+export const safe = theme.safe ?? { x: 84, bottom: 96 };
 
 /**
  * CSS `text-transform: uppercase` maps the micro sign (U+00B5) to a Greek

@@ -161,3 +161,24 @@ of Tally's 41 reels — the bank was under-used long before it was insufficient.
 A new element is right when the argument genuinely has a shape none of them
 draw; it is wrong when what you actually needed was a `flow` instead of a
 table.
+
+## The ground
+
+Not an element — it sits under them. `reel.chrome.field`, `beat.field`,
+`shot.field`, eight presets and a spec: see `docs/GROUND.md`.
+
+## The footage box
+
+A shaped, placed window onto moving pictures, with keyframe tracks and the
+spill: see `docs/FOOTAGE.md`.
+
+## The cutout
+
+Also not an element — it sits OVER them, and under the words. A matted person
+with nothing behind them: `reel.cutout`, `beat.cutout`, four placements and a
+spec, no source dimensions anywhere. See `docs/CUTOUT.md`.
+
+## Subtitles
+
+The caption band as a named, overridable look — eight presets, per-reel and
+per-beat: see `docs/SUBTITLES.md`.
