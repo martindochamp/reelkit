@@ -1088,7 +1088,12 @@ export const Reel: React.FC<ReelProps> = ({
   music,
   sfx,
   roomTone,
-  captions = "page",
+  // NO default here. `"page"` used to sit on this line, and since the band
+  // resolves `captions ?? st.mode ?? "page"`, it made every subtitle preset's
+  // own `mode` unreachable: hormozi, beast, impact, centred and karaoke all
+  // rendered as a whole page standing at once. Found 2026-09-16 when Martin
+  // called a hormozi reel "non animé". The fallback lives in the band.
+  captions,
   host,
   cutout,
   bed,
