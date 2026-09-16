@@ -92,3 +92,24 @@ reference fresh, into a copy, and never into Tally's `out/`.
 serving-tier -- --long --loose`, cached voice, no TTS call): the decoded video
 stream and the decoded audio stream are both **byte-identical** to the fork
 reference. Parity holds.
+
+**Re-run 2026-09-16, after the timeline work.** Same command, same fixture,
+against reelkit's own 2026-09-08 artifact — copied aside first, because the
+render overwrites it. Decoded video `0b59735b341cde092cfa3546131deb86` and
+decoded audio `4f74d7dfaa2b0850770fe8fdf9361bde`, 1721 frames, 2693 audio
+frames: **identical on both streams.**
+
+What that covers, because it is a long list and the point of the gate is that
+none of it showed: `msToFrames` and `layShots` moved into
+`src/lab/timeline.mjs`; `shotProps` swapped onto the resolver
+(`layoutOfBeat`); the cross-check that lays every reel out twice and throws on
+a frame of disagreement; the motion channel with per-property clocks, `lead`
+and anchors; the footage box drawn against the canvas instead of the type
+column; and the motion cascade from reel to beat to shot. A post that asks for
+none of it renders the same pixels and the same samples.
+
+Two things worth keeping from the run. The cross-check fired on a real
+production post for the first time and stayed silent, which is worth more than
+it staying silent on a probe written for it. And the hashes are of the DECODED
+streams, not the files — a container's metadata can differ while the picture
+does not, and comparing files would have produced a false alarm.
