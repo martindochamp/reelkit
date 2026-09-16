@@ -110,15 +110,40 @@ this migration is worth doing: it is what makes a real voice usable at all.
 
 ## What gets deleted
 
-A migration that only adds is not a migration. This one collapses:
+A migration that only adds is not a migration. The **eight timing paths**
+above collapse into one resolver, and that part is not in question.
 
-- the **eight timing paths** above into one resolver,
-- `hold` — it becomes a span that outlasts its sentence,
-- the two cue systems (`[+]` markers and `cues` in seconds) into one anchor,
-- `shots`' `seconds`/`weight` tiling — shots become elements with spans,
-- `offsetFrames`' dual clock — there is one clock,
-- `chrome.entrance`, already superseded by the motion bank,
-- `host`, which 0 of 101 posts use.
+The rest of what this document first called deletions was never counted. It
+has been now, across every corpus — 101 Tally posts, 2 Papyr, 1 parity and the
+five probe projects, 2026-09-16:
+
+| key | posts that write it | what it actually is |
+|---|---|---|
+| `cues` | **1** (Tally) | a deletion. Fold into one anchor. |
+| `shots` | **7**, all probes, 0 in production | a deletion, as Martin ruled — after parity. |
+| `host` | **4**, all in the casino probe | **blocked**, see below |
+| `chrome.entrance` | **4**, the same four | **blocked**, same corpus |
+| `hold` | **63** — 45 of 101 Tally, 2 Papyr, 16 probes | **not a deletion at all.** A migration of the whole corpus. |
+
+So two entries were blocked by one probe project, one was a corpus-wide
+migration wearing a deletion's clothes, and only two were what they claimed.
+
+**`host` and `chrome.entrance`.** `src/Reel.tsx` sets the condition itself —
+*"kept because posts written before this exist and still render; the deletion
+candidate the moment none do"* — and that moment has not come. The migration
+is not a rename either: a `cutout` needs an alpha MATTE while `host` reads a
+plain clip from `posts/clips/`, so it means producing four mattes through the
+matting pipeline. And deleting `posts/clips/` is not on the table: `recording`
+and `clip` read it too. The second pool was never `host`'s alone.
+
+**One measurement in that sweep was void and is recorded so nobody repeats
+it.** Counting `"cutout"` across Tally returned 45 posts, which would have
+been alarming — until the context was read. In Tally, `"cutout": true` is a
+BOOLEAN on an image element meaning "this product photo is background
+removed". In reelkit, `cutout` is the matted-person layer at reel or beat
+level. Same key, two meanings, two positions in the tree — exactly the class
+of divergence `docs/TWINS.md` exists for. A count is not evidence until the
+key means the same thing on both sides.
 
 If less than that comes out, the timeline was laid on top of the debt instead
 of replacing it.
