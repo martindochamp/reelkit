@@ -212,14 +212,22 @@ Three rules, and the third is the one worth arguing with:
    anchored itself has no defined answer for what "the rest" means, and
    inventing one would be the kind of silent arithmetic this migration exists
    to remove.
-3. **An anchored shot may leave the beat empty.** Tiles cover the beat by
-   construction; anchors do not. A shot anchored from `s3.start` to `s3.end`
-   inside a beat that runs longer leaves frames with no picture — which is
-   either a hole nobody wants, or precisely the wordless shot the references
-   hold and the beat model cannot express. **My recommendation: allow it and
-   say so on the console**, because refusing it would re-impose the rule this
-   whole document exists to lift. It is the one call in here I would rather
-   have contested than assumed.
+3. **An anchored shot may leave the beat empty — allowed, and announced.**
+   Martin, 2026-09-16: *"j'autorise."* Tiles cover a beat by construction and
+   anchors do not, so a shot anchored inside a beat that runs longer leaves
+   frames with no picture. That is either a hole nobody wants or precisely the
+   wordless held shot the references use and the beat model could never
+   express; the two have the same shape and nothing in a spec tells them
+   apart. Refusing it would re-impose the rule this document exists to lift,
+   so the engine allows it and prints what it found.
+
+   **What a hole actually renders as, measured on frames rather than assumed:**
+   the beat's own ground and the caption band, with no screen element — the
+   previous shot does NOT persist. One consequence worth knowing before you
+   write one: the hole also loses the shot-level `field`, so it falls back to
+   the BEAT's ground, not the ground of the picture that just left. A held
+   wordless shot that should keep the same backdrop needs that backdrop set on
+   the beat.
 
 ## Order of work
 

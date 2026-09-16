@@ -59,19 +59,94 @@ export const msToFrames = (ms, fps = 30) => Math.round((ms / 1000) * fps);
  * @param {string} id the beat's name, for anchors and for a refusal that
  *   points at one picture
  */
-export const layoutOfBeat = (shots, frames, id, { fps = 30 } = {}) => {
-  const named = { [`${id}.start`]: 0, [`${id}.end`]: frames };
-  const placed = layShots(shots, frames, id, { fps }).map((t, k) => ({
-    id: `${id}s${k + 1}`,
-    from: { at: `${id}.start`, offset: `+${t.startFrame}f` },
-    seconds: t.durationInFrames / fps,
-  }));
-  const out = layOut(placed, named, { fps, end: frames });
-  return placed.map((p, k) => ({
+export const layoutOfBeat = (
+  shots,
+  frames,
+  id,
+  { fps = 30, named = {}, onGap, label = id } = {},
+) => {
+  // `id` NAMES ANCHORS, `label` names the post and beat in a refusal. They
+  // were one string until a post could write an anchor, at which point the
+  // renderer's human label ("mypost beat 2") became the only thing a post
+  // could anchor to — and nobody would ever write that. A stable `beat2` is
+  // what a post says; the label is what a person reads when it goes wrong.
+  const edges = { [`${id}.start`]: 0, [`${id}.end`]: frames, ...named };
+
+  // RULE 1 — a shot names its time one way. `at` with `seconds` is a start and
+  // a length and is fine; the rest contradict each other.
+  shots.forEach((s, k) => {
+    const where = `${label} shot ${k + 1}`;
+    if (s.span != null && (s.at != null || s.to != null || s.seconds != null || s.weight != null)) {
+      throw new Error(
+        `${where}: \`span\` already means from its target's start to its end — ` +
+          `it cannot also carry \`at\`, \`to\`, \`seconds\` or \`weight\`.`,
+      );
+    }
+    if (s.at != null && s.weight != null) {
+      throw new Error(
+        `${where}: \`weight\` is a share of what the voice leaves and \`at\` is a ` +
+          `place on the clock. A shot uses one or the other.`,
+      );
+    }
+    if (s.to != null && s.at == null) {
+      throw new Error(`${where}: \`to\` with no \`at\` has no start to run from.`);
+    }
+  });
+
+  const anchored = shots.map((s) => s.span != null || s.at != null);
+
+  // RULE 2 — anchors and tiles do not mix inside a beat. Tiles divide what is
+  // left, and "what is left" has no meaning once some shots have placed
+  // themselves. Inventing one would be the silent arithmetic this replaces.
+  if (anchored.some(Boolean) && !anchored.every(Boolean)) {
+    const which = anchored.map((a, k) => (a ? null : k + 1)).filter(Boolean);
+    throw new Error(
+      `${label}: shot(s) ${which.join(", ")} tile while others anchor themselves. ` +
+        `A beat's shots all tile or all anchor — "the rest" means nothing when ` +
+        `some of the beat has already been claimed.`,
+    );
+  }
+
+  const placed = anchored.every(Boolean) && shots.length > 0
+    ? shots.map((s, k) => {
+        const pid = `${id}s${k + 1}`;
+        if (s.span != null) return { id: pid, span: s.span };
+        const p = { id: pid, from: s.at };
+        if (s.to != null) p.to = s.to;
+        else if (s.seconds != null) p.seconds = s.seconds;
+        return p;
+      })
+    : layShots(shots, frames, label, { fps }).map((t, k) => ({
+        id: `${id}s${k + 1}`,
+        from: { at: `${id}.start`, offset: `+${t.startFrame}f` },
+        seconds: t.durationInFrames / fps,
+      }));
+
+  const out = layOut(placed, edges, { fps, end: frames });
+  const tiles = placed.map((p, k) => ({
     shot: shots[k],
     startFrame: out[p.id].start,
     durationInFrames: out[p.id].length,
   }));
+
+  // RULE 3 — anchored shots may leave the beat partly empty, and the engine
+  // SAYS SO rather than refusing. Martin, 2026-09-16: "j'autorise". Tiles
+  // cover a beat by construction and anchors do not, and the hole is either a
+  // mistake or precisely the wordless held shot the references use and the
+  // beat model could never express. Refusing it would re-impose the rule the
+  // timeline exists to lift; saying nothing would hide a mistake.
+  if (onGap && anchored.every(Boolean) && shots.length > 0) {
+    const covered = new Array(frames).fill(false);
+    for (const t of tiles) {
+      for (let f = Math.max(0, t.startFrame); f < Math.min(frames, t.startFrame + (t.durationInFrames ?? 0)); f++) {
+        covered[f] = true;
+      }
+    }
+    const empty = covered.filter((c) => !c).length;
+    if (empty > 0) onGap({ frames: empty, seconds: empty / fps });
+  }
+
+  return tiles;
 };
 
 /**
@@ -97,7 +172,13 @@ export const layoutOfReel = (beats, { fps = 30 } = {}) => {
     const id = `beat${i + 1}`;
     placed.push({ id, from: { at: `${id}.start` }, seconds: b.durationInFrames / fps });
     if (!Array.isArray(b.shots) || b.shots.length === 0) return;
-    layShots(b.shots, b.durationInFrames, id, { fps }).forEach((t, k) => {
+    // Through `layoutOfBeat`, never `layShots` directly. This called the tiler
+    // for one day and the cross-check caught it the moment shots learned to
+    // anchor: two `seconds: 1` shots 45 frames apart were laid out as 0+30 and
+    // 45+30 by the renderer and as 0+30 and 30+60 here, because the tiler saw
+    // two fixed tiles and let the last one absorb the remainder. One placement
+    // path, or the second opinion is worth nothing.
+    layoutOfBeat(b.shots, b.durationInFrames, id, { fps }).forEach((t, k) => {
       placed.push({
         id: `${id}s${k + 1}`,
         from: { at: `${id}.start`, offset: `+${t.startFrame}f` },

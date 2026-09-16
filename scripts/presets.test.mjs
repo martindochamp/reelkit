@@ -782,6 +782,23 @@ const TL_REEL = layoutOfReel([
   { durationInFrames: 90, shots: [{}, {}, { seconds: 0.5 }] },
   { durationInFrames: 60 },
 ], { fps: 30 });
+// A beat whose shots ANCHOR themselves, laid out inside a whole reel. This is
+// the divergence the cross-check caught on the first post ever to write an
+// anchor: the reel layout was still calling the tiler, which saw two
+// `seconds: 1` shots as fixed tiles and let the last absorb the remainder —
+// 30+60 where the renderer said 45+30.
+const TL_ANCHORED_REEL = layoutOfReel([
+  { durationInFrames: 60 },
+  { durationInFrames: 90, shots: [
+    { at: "beat2.start", seconds: 1 },
+    { at: { at: "beat2.start", offset: "+45f" }, seconds: 1 },
+  ] },
+], { fps: 30 });
+ok("an anchored shot is placed on the reel's clock, not tiled",
+   TL_ANCHORED_REEL.beat2s2.start === 105 && TL_ANCHORED_REEL.beat2s2.length === 30);
+ok("and its neighbour keeps the length it asked for",
+   TL_ANCHORED_REEL.beat2s1.start === 60 && TL_ANCHORED_REEL.beat2s1.length === 30);
+
 ok("a beat lands at its own start and runs its own length",
    TL_REEL.beat1.start === 0 && TL_REEL.beat1.length === 90);
 ok("the second beat follows the first", TL_REEL.beat2.start === 90);
@@ -805,6 +822,38 @@ ok("it returns one entry per shot, carrying the shot itself",
    TL_BEAT.length === 3 && TL_BEAT[2].shot.seconds === 0.5);
 ok("beat-local frames, exactly as the tiler gave them",
    TL_BEAT.map((t) => `${t.startFrame}+${t.durationInFrames}`).join(" ") === "0+38 38+37 75+15");
+// ANCHORED SHOTS — the first thing a post will write on the timeline.
+// Three rules: one way of naming time, no mixing anchors with tiles, and a
+// hole is allowed but announced (Martin, 2026-09-16: "j'autorise").
+const TL_ANCHOR = (shots, frames = 90, opts = {}) =>
+  layoutOfBeat(shots, frames, "beat1", { fps: 30, ...opts });
+ok("an anchored shot lands where its anchor says",
+   TL_ANCHOR([{ at: "beat1.start", seconds: 1 }, { at: { at: "beat1.start", offset: "+45f" }, seconds: 1 }])
+     .map((t) => `${t.startFrame}+${t.durationInFrames}`).join(" ") === "0+30 45+30");
+ok("an anchored shot with no end runs to the end of the beat",
+   TL_ANCHOR([{ at: { at: "beat1.start", offset: "+60f" } }])[0].durationInFrames === 30);
+ok("a shot can borrow an edge the caller supplied — a sentence, say",
+   TL_ANCHOR([{ span: "s2" }], 90, { named: { "s2.start": 12, "s2.end": 54 } })
+     .map((t) => `${t.startFrame}+${t.durationInFrames}`).join("") === "12+42");
+throws("span beside its own edges is refused",
+   () => TL_ANCHOR([{ span: "s2", seconds: 1 }]), /cannot also carry/);
+throws("a weight beside an anchor is refused",
+   () => TL_ANCHOR([{ at: "beat1.start", weight: 2 }]), /one or the other/);
+throws("a `to` with no `at` is refused",
+   () => TL_ANCHOR([{ to: "beat1.end" }]), /no start to run from/);
+throws("and a beat where some shots tile while others anchor is refused",
+   () => TL_ANCHOR([{}, { at: "beat1.start", seconds: 1 }]), /all tile or all anchor/);
+ok("a hole is allowed, and reported rather than refused",
+   (() => { let gap = null;
+            TL_ANCHOR([{ at: "beat1.start", seconds: 1 }], 90, { onGap: (g) => (gap = g) });
+            return gap && gap.frames === 60 && gap.seconds === 2; })());
+ok("and a beat its shots cover completely reports nothing",
+   (() => { let gap = null;
+            TL_ANCHOR([{ at: "beat1.start", seconds: 3 }], 90, { onGap: (g) => (gap = g) });
+            return gap === null; })());
+ok("tiling still works untouched when no shot anchors itself",
+   TL_ANCHOR([{}, {}, {}]).map((t) => t.durationInFrames).join(",") === "30,30,30");
+
 ok("and it agrees with layShots shot for shot",
    JSON.stringify(TL_BEAT.map((t) => [t.startFrame, t.durationInFrames])) ===
    JSON.stringify(layShots([{}, {}, { seconds: 0.5 }], 90, "beat1", { fps: 30 })

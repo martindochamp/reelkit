@@ -840,7 +840,24 @@ const stageBg = (bg) => {
 // weaker check than it was: the shot placements come from the same code on
 // both sides. What it still proves on its own is the beat placement and the
 // accumulation of beat starts down the reel.
-const layShots = (shots, frames, where) => layoutOfBeat(shots, frames, where, { fps: FPS });
+const layShots = (shots, frames, where, id) =>
+  layoutOfBeat(shots, frames, id, {
+    fps: FPS,
+    // The human label, kept apart from the anchor id: a refusal should read
+    // "mypost beat 2 shot 3", while a post anchors to `beat2.start`.
+    label: where,
+    // Rule 3 of docs/TIMELINE.md, and the half of it that is easy to forget:
+    // anchored shots MAY leave a beat partly empty (Martin, 2026-09-16:
+    // "j'autorise"), and the engine says so. Without this line the permission
+    // would be real and the telling would not — a promise the code does not
+    // keep, which is the defect this codebase keeps finding in its own axes.
+    onGap: ({ seconds }) =>
+      console.log(
+        `WARN   ${where} — ${seconds.toFixed(2)} s with no picture. Anchored ` +
+          `shots do not tile, so this is either the held wordless shot you ` +
+          `wanted or a hole nobody asked for.`,
+      ),
+  });
 
 for (const name of names) {
   const post = JSON.parse(
@@ -1030,7 +1047,7 @@ for (const name of names) {
 
     /** The shot list this beat hands the composition, laid over `frames`. */
     const shotProps = (frames) =>
-      layShots(shots, frames, `${name} beat ${i + 1}`).map(
+      layShots(shots, frames, `${name} beat ${i + 1}`, `beat${i + 1}`).map(
         ({ shot, startFrame, durationInFrames }) => ({
           element: motionOf(shot.screen, shot),
           startFrame,
