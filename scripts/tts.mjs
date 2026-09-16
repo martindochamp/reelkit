@@ -209,11 +209,22 @@ const runpodGenerate = async (text, voice) => {
   let job = await res.json();
 
   // Cold start: runsync can hand back IN_PROGRESS/IN_QUEUE instead of the
-  // result. Poll /status until the worker wakes (30-60 s after idle).
+  // result. Poll /status until the worker wakes — 30-60 s after idle, but
+  // measured at 296 s on 2026-09-16 when RunPod had throttled 4 of the 5
+  // workers for want of GPUs. The old 180 s cap gave up on that job while
+  // RunPod went on to run and bill it, so the wait is long, and giving up
+  // cancels the job rather than leaving it to run for nobody.
   const started = Date.now();
   while (job.status === "IN_PROGRESS" || job.status === "IN_QUEUE") {
-    if (Date.now() - started > 180_000) {
-      throw new Error(`runpod job ${job.id} still ${job.status} after 180 s`);
+    if (Date.now() - started > 600_000) {
+      await fetch(`https://api.runpod.ai/v2/${endpoint}/cancel/${job.id}`, {
+        method: "POST",
+        headers,
+      }).catch(() => {});
+      throw new Error(
+        `runpod job ${job.id} still ${job.status} after 600 s — cancelled. ` +
+          `The endpoint's /health shows whether its workers are throttled.`,
+      );
     }
     await new Promise((r) => setTimeout(r, 2500));
     res = await fetch(`https://api.runpod.ai/v2/${endpoint}/status/${job.id}`, {
