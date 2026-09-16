@@ -196,6 +196,17 @@ while the line, the caption band and the camera run underneath, unbroken:
 }
 ```
 
+- **Or a shot names WHEN instead of how much** (2026-09-16). `{"span": "s2"}`
+  is "exactly as long as sentence 2"; `{"at": "beat3.start", "to": "…"}` or
+  `{"at": {"at": "beat3.start", "offset": "+45f"}, "seconds": 1}` place it
+  outright. Anchors available today are the beat's own edges — `beat3.start`,
+  `beat3.end` — and any other shot in the same beat. Three rules: a shot names
+  its time ONE way (`at` with `seconds` is fine, the rest contradict); a beat's
+  shots either all tile or all anchor, never both; and anchored shots MAY leave
+  part of the beat with no picture, which the engine allows and prints. That
+  hole draws the BEAT's ground and the caption band with no screen element —
+  the previous shot does not persist, and its `field` goes with it. See
+  [TIMELINE.md](TIMELINE.md).
 - A shot takes `seconds` for an exact length, or `weight` for a share of
   whatever the voice leaves (default 1 — three plain shots are thirds).
   The shots **tile the beat exactly**: the last weighted one absorbs the
