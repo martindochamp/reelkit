@@ -51,7 +51,11 @@ import { sourcedReady as sourcedEffect } from "./sfx-import.mjs";
 import { config } from "./project.mjs";
 import { postsDir, projectDir } from "./stage.mjs";
 import { presetBank, resolvePresets } from "./presets.mjs";
-import { layShots as tlLayShots, msToFrames as framesOfMs } from "../src/lab/timeline.mjs";
+import {
+  layShots as tlLayShots,
+  layoutOfReel,
+  msToFrames as framesOfMs,
+} from "../src/lab/timeline.mjs";
 import { warnTierList } from "./tier-legibility.mjs";
 import { forget, resolveVoice, speak } from "./tts.mjs";
 
@@ -1456,6 +1460,53 @@ for (const name of names) {
       return at.toFixed(2);
     });
     console.log(`CUTS  ${name}  ${cuts.join("s  ")}s  · end ${(t / FPS).toFixed(2)}s`);
+  }
+
+  // THE STRANGLER CHECK. Every render now lays the same reel out a second
+  // time, through src/lab/timeline.mjs, and refuses if the two disagree by a
+  // single frame. Nothing downstream uses the resolver's answer yet — this
+  // exists so that by the time it does, it has already agreed with the
+  // renderer on every post that was made in between.
+  //
+  // It is fed the AUTHORED shots, not the laid ones, so it re-derives the
+  // tiling instead of being handed it. A check that copies its answer from
+  // the thing it is checking is not a check.
+  //
+  // It throws rather than warns on purpose: a warning nobody reads is how a
+  // silent divergence ships, and this is the gate standing between the
+  // timeline and deleting anything.
+  {
+    const resolved = layoutOfReel(
+      beats.map((b, i) => ({
+        durationInFrames: b.durationInFrames,
+        ...(reel.beats[i]?.shots ? { shots: reel.beats[i].shots } : {}),
+      })),
+      { fps: FPS },
+    );
+    let at = 0;
+    beats.forEach((b, i) => {
+      const id = `beat${i + 1}`;
+      const mine = { start: at, length: b.durationInFrames };
+      const theirs = resolved[id];
+      if (theirs.start !== mine.start || theirs.length !== mine.length) {
+        throw new Error(
+          `${name} ${id}: the renderer says ${mine.start}+${mine.length} and the ` +
+            `timeline says ${theirs.start}+${theirs.length}. They must agree before ` +
+            `either is believed — see docs/TIMELINE.md.`,
+        );
+      }
+      (b.shots ?? []).forEach((s, k) => {
+        const sid = `${id}s${k + 1}`;
+        const t = resolved[sid];
+        if (t.start !== at + s.startFrame || t.length !== s.durationInFrames) {
+          throw new Error(
+            `${name} ${sid}: the renderer says ${at + s.startFrame}+${s.durationInFrames} ` +
+              `and the timeline says ${t.start}+${t.length}.`,
+          );
+        }
+      });
+      at += b.durationInFrames;
+    });
   }
 
   const inputProps = {
