@@ -542,11 +542,18 @@ const emphasisStyle = (
  * passes and the frame still overflows.
  */
 let ctx: CanvasRenderingContext2D | null = null;
-const measurer = (family: string, weight: number, spacing: string, upper: boolean) => {
+const measurer = (
+  family: string,
+  weight: number,
+  spacing: string,
+  upper: boolean,
+  italic = false,
+) => {
   ctx = ctx ?? document.createElement("canvas").getContext("2d");
   return (text: string, size: number) => {
     if (!ctx) return text.length * size * 0.55;
-    ctx.font = `${weight} ${size}px ${family}`;
+    // An italic face has its own advances, so it is measured as itself.
+    ctx.font = `${italic ? "italic " : ""}${weight} ${size}px ${family}`;
     const t = upper ? text.toUpperCase() : text;
     const em = /em$/.test(spacing) ? parseFloat(spacing) * size : parseFloat(spacing) || 0;
     return ctx.measureText(t).width + em * Math.max(0, t.length - 1);
@@ -589,6 +596,16 @@ const Captions: React.FC<{
   const { overArt, palette } = band;
   if (!page) return null;
   const said = page.words.filter((w) => frame >= w.startFrame).length;
+  // THE SPOKEN WORD'S COLOUR — the highlight that walks the page with the
+  // voice, measured on a Shorts reference (IJA7EaoHxu8, 2026-09-16): white
+  // words, the one being said in yellow, the yellow moving on each word. It
+  // is a colour and not a weight, so a proportional line never reflows under
+  // it. It wins over a `*marked*` word's colour: the mark is chosen once, the
+  // highlight is where the voice is now. Off unless a look names it.
+  const saidPaint = (i: number) =>
+    style.saidColor != null && i === Math.max(0, said - 1)
+      ? { color: style.saidColor }
+      : null;
 
   // The ink was already expanded into `color` / `strokeColor` /
   // `emphasisColor` by the resolver, at the layer that named it — which is
@@ -624,6 +641,7 @@ const Captions: React.FC<{
       style.fontWeight,
       style.letterSpacing,
       style.textTransform === "uppercase",
+      style.fontStyle === "italic",
     ),
   );
 
@@ -728,6 +746,7 @@ const Captions: React.FC<{
           fontFamily: style.fontFamily ?? fonts.caption,
           fontSize: fit.fontSize,
           fontWeight: style.fontWeight,
+          fontStyle: style.fontStyle,
           lineHeight: 1.35,
           letterSpacing: style.letterSpacing,
           textTransform: style.textTransform,
@@ -785,6 +804,7 @@ const Captions: React.FC<{
                           ? { fontWeight: style.saidWeight }
                           : null),
                         ...(emphasisStyle(w.emphasis, style) ?? {}),
+                        ...saidPaint(i),
                       }
                     : {
                         // `dim` set: the line stands from the first frame and
@@ -794,6 +814,7 @@ const Captions: React.FC<{
                           ? { opacity: here ? 1 : style.dim }
                           : { visibility: here ? "visible" : "hidden" }),
                         ...(emphasisStyle(w.emphasis, style) ?? {}),
+                        ...saidPaint(i),
                         ...(mode === "bump"
                           ? {
                               display: "inline-block",

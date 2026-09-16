@@ -90,7 +90,7 @@ const TREE = {
     keys: words(
       "preset mode fontFamily fontSize fontWeight letterSpacing textTransform " +
         "plate background maxWords maxChars dim emphasisColor emphasis bandTop " +
-        "stroke strokeColor color saidWeight shadow ink floor",
+        "stroke strokeColor color saidWeight saidColor fontStyle shadow ink floor",
     ),
     kids: { background: "subtitlesBackground" },
   },

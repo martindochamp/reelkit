@@ -325,6 +325,8 @@ beside a preset. The keys the drawing code reads:
 | `fontFamily` | the band's own face, over `theme.fonts.caption`. A preset could restyle everything about the type EXCEPT the letterform it is recognised by |
 | `fontSize` `fontWeight` `letterSpacing` `textTransform` | the type |
 | `saidWeight` | the word being said, `page` mode only. See above |
+| `saidColor` | the colour of the word being said, in every mode: the highlight that walks the page with the voice. Beats a `*marked*` colour |
+| `fontStyle` | `"italic"` for a slanted face; the fit measures it as italic |
 | `color` | the fill. Absent, the band borrows the page's ink |
 | `ink` | a named set from `CAPTION_INKS`, or a `{fill, stroke, emphasis}` of your own |
 | `stroke` `strokeColor` | a stroke around a solid fill |

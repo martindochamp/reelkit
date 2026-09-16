@@ -28,7 +28,7 @@
  *   dim?: number, emphasisColor?: string,
  *   emphasis?: { color?: string, scale?: number, outline?: number }[],
  *   bandTop?: number, stroke?: number, strokeColor?: string, color?: string,
- *   saidWeight?: number, shadow?: string|object|object[]|null, ink?: string|object,
+ *   saidWeight?: number, saidColor?: string, fontStyle?: "normal"|"italic", shadow?: string|object|object[]|null, ink?: string|object,
  *   floor?: number,
  * }} SubtitleSpec
  *

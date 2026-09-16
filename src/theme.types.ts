@@ -140,6 +140,13 @@ export type CaptionStyle = {
    */
   saidWeight?: number;
   /**
+   * The colour of the word being said, in every mode — the highlight that
+   * walks the page with the voice. Beats a `*marked*` word's colour.
+   */
+  saidColor?: string;
+  /** `"italic"` for a slanted face. Measured as italic by the fit. */
+  fontStyle?: "normal" | "italic";
+  /**
    * A stroke around the glyphs, in canvas px, with a SOLID fill kept
    * (`paint-order: stroke fill`). The platform-caption look: white fill,
    * black outline, no plate.
