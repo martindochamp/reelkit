@@ -219,6 +219,18 @@ while the line, the caption band and the camera run underneath, unbroken:
   a part of *the* screen and there are several. A shot names its own
   `cues` instead, in **seconds into that shot**, exactly as a silent beat
   does.
+- **A cue may also be an anchor** (2026-09-16). A number is still seconds and
+  always will be — every post ever written depends on it. Anything else
+  resolves: a silent beat reaches its own edges, `"beat3.end"` or
+  `{"at": "beat3.end", "offset": "-15f"}`, and a shot reaches its own,
+  `{"at": "beat3s2.end", "offset": "-10f"}`. A shot publishes ONLY its own
+  edges, so a cue inside a shot counts from that shot. A name that resolves
+  to nothing is refused rather than printed at frame zero.
+  **`[+]` is deliberately untouched**: a marker sitting in the sentence says
+  "print this when the voice reaches THIS WORD", which is a better anchor than
+  any time and impossible to mis-order. It is the good half of the system, and
+  folding it into this vocabulary would have replaced it to make the other
+  half tidier.
 - `place` is never a shot. A placed item outlives its beat by definition;
   a shot ends at the next cut. It stays a beat of its own.
 - The caption band follows the picture actually under it, so a beat that

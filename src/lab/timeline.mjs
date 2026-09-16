@@ -45,6 +45,39 @@
 export const msToFrames = (ms, fps = 30) => Math.round((ms / 1000) * fps);
 
 /**
+ * The frames a beat's or a shot's `cues` land on.
+ *
+ * A number stays SECONDS, exactly as it has always been, so every post ever
+ * written means the same thing. Anything else is an anchor: `"beat2.end"`,
+ * `{at: "beat2.start", offset: "+12f"}`, `"s3.start"` when the caller passes
+ * sentence edges.
+ *
+ * WHY `[+]` IS NOT TOUCHED. A marker inside a spoken line says "print this
+ * when the voice reaches THIS WORD" — semantic, impossible to mis-order, and
+ * nothing to count. That is a better anchor than any time, and 80 posts write
+ * one. Folding it into this vocabulary would have replaced the good half of
+ * the system to make the bad half tidier. `cues` in seconds exists because a
+ * SILENT beat has no word to hang a marker on, and that is the half that
+ * gains an anchor here.
+ *
+ * @param {(number|string|Anchor)[]} cues
+ * @param {{fps?: number, named?: Record<string, number>, label?: string}} opts
+ */
+export const cueFramesOf = (cues = [], { fps = 30, named = {}, label = "a beat" } = {}) =>
+  cues.map((c, k) => {
+    const { ref, frames } = parseAnchor(c, fps);
+    if (ref == null) return frames;
+    if (!(ref in named)) {
+      throw new Error(
+        `${label}: cue ${k + 1} is anchored to "${ref}", which names nothing ` +
+          `here. A cue reaches its own beat's edges and whatever the caller ` +
+          `published — a dangling name is refused rather than printed at zero.`,
+      );
+    }
+    return named[ref] + frames;
+  });
+
+/**
  * One beat's shots, placed through the resolver rather than by the tiler
  * alone — same shape `layShots` returns, so a caller swaps one call for the
  * other and nothing downstream notices.

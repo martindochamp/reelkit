@@ -52,6 +52,7 @@ import { config } from "./project.mjs";
 import { postsDir, projectDir } from "./stage.mjs";
 import { presetBank, resolvePresets } from "./presets.mjs";
 import {
+  cueFramesOf,
   layoutOfBeat,
   layoutOfReel,
   msToFrames as framesOfMs,
@@ -1048,14 +1049,25 @@ for (const name of names) {
     /** The shot list this beat hands the composition, laid over `frames`. */
     const shotProps = (frames) =>
       layShots(shots, frames, `${name} beat ${i + 1}`, `beat${i + 1}`).map(
-        ({ shot, startFrame, durationInFrames }) => ({
+        ({ shot, startFrame, durationInFrames }, k) => ({
           element: motionOf(shot.screen, shot),
           startFrame,
           durationInFrames,
           // A shot has no spoken word to hang a [+] on, so its cues are
           // SECONDS into the shot — the form a silent beat already uses,
-          // for the same reason.
-          cueFrames: (shot.cues ?? []).map((t) => msToFrames(t * 1000)),
+          // for the same reason. They may also be anchors now, and a shot
+          // publishes its OWN edges only: a cue reaching out to the beat from
+          // inside a shot would need a change of frame of reference, and
+          // inventing one before anybody has asked is how a vocabulary grows
+          // things nobody uses.
+          cueFrames: cueFramesOf(shot.cues, {
+            fps: FPS,
+            named: {
+              [`beat${i + 1}s${k + 1}.start`]: 0,
+              [`beat${i + 1}s${k + 1}.end`]: durationInFrames,
+            },
+            label: `${name} beat ${i + 1} shot ${k + 1}`,
+          }),
           ...(shot.bg ? { bg: shot.bg } : {}),
           ...(shot.border !== undefined ? { border: shot.border ?? null } : {}),
           ...(shot.field !== undefined ? { field: shot.field ?? null } : {}),
@@ -1088,7 +1100,14 @@ for (const name of names) {
       const frames = msToFrames(holdMs);
       // A silent beat may still choreograph: `cues` in SECONDS into the
       // hold, since there are no spoken words to hang a [+] on.
-      const heldCues = (beat.cues ?? []).map((t) => msToFrames(t * 1000));
+      // A number is still seconds into the hold, exactly as before; anything
+      // else is an anchor, and the beat publishes its own edges BEAT-LOCALLY
+      // (start 0, end `frames`) the same way `layoutOfBeat` does for shots.
+      const heldCues = cueFramesOf(beat.cues, {
+        fps: FPS,
+        named: { [`beat${i + 1}.start`]: 0, [`beat${i + 1}.end`]: frames },
+        label: `${name} beat ${i + 1}`,
+      });
       // The look this beat's band will be drawn with — needed here only for
       // its character cap, so an unfittable word is named before the render.
       const heldStyle = resolveSubtitles(

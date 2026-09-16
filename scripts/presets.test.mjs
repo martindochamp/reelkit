@@ -18,7 +18,7 @@
 
 import { applyPreset, resolvePresets } from "./presets.mjs";
 import { motionAt, motionEnd, motionStyle, originPx } from "../src/lab/motion.mjs";
-import { edgesOf, layOut, layShots, layoutOfBeat, layoutOfReel, msToFrames, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
+import { cueFramesOf, edgesOf, layOut, layShots, layoutOfBeat, layoutOfReel, msToFrames, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
 
 let pass = 0, fail = 0;
 const ok = (label, cond, got) => {
@@ -822,6 +822,24 @@ ok("it returns one entry per shot, carrying the shot itself",
    TL_BEAT.length === 3 && TL_BEAT[2].shot.seconds === 0.5);
 ok("beat-local frames, exactly as the tiler gave them",
    TL_BEAT.map((t) => `${t.startFrame}+${t.durationInFrames}`).join(" ") === "0+38 38+37 75+15");
+// CUES. A number stays seconds — every post ever written keeps its meaning —
+// and anything else is an anchor. `[+]` markers are deliberately untouched:
+// a marker in a spoken line is a better anchor than any time, and 80 posts
+// write one.
+const TL_CUE_EDGES = { "beat2.start": 60, "beat2.end": 150, "s4.start": 96 };
+ok("a bare number is still seconds, to the frame",
+   cueFramesOf([0, 1.2, 2], { fps: 30 }).join(",") === "0,36,60");
+ok("an anchor resolves against the edges the caller published",
+   cueFramesOf(["beat2.start", "beat2.end"], { fps: 30, named: TL_CUE_EDGES }).join(",") === "60,150");
+ok("an anchor takes an offset, in seconds or in frames",
+   cueFramesOf([{ at: "beat2.start", offset: "+12f" }, { at: "s4.start", offset: 0.5 }],
+               { fps: 30, named: TL_CUE_EDGES }).join(",") === "72,111");
+ok("the two forms mix in one list, because a post should not have to choose",
+   cueFramesOf([0.5, "beat2.start"], { fps: 30, named: TL_CUE_EDGES }).join(",") === "15,60");
+throws("a cue anchored to a name that exists nowhere is refused, not printed at zero",
+   () => cueFramesOf(["s9.end"], { fps: 30, named: TL_CUE_EDGES, label: "probe beat 2" }),
+   /names nothing here/);
+
 // ANCHORED SHOTS — the first thing a post will write on the timeline.
 // Three rules: one way of naming time, no mixing anchors with tiles, and a
 // hole is allowed but announced (Martin, 2026-09-16: "j'autorise").
