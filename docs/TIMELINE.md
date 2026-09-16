@@ -229,6 +229,55 @@ Three rules, and the third is the one worth arguing with:
    wordless shot that should keep the same backdrop needs that backdrop set on
    the beat.
 
+## The last structural step — an element that outlives its beat
+
+Anchored shots and anchored cues both live INSIDE a beat. The thing Martin
+asked for first — *"des éléments qui chevauchent les phrases"* — still cannot
+be written: a b-roll across sentences 3 to 5, a caption lingering past a cut,
+a picture that starts under one line and ends under the next.
+
+**The precedent already exists and is worth reading before generalising it.**
+The scene layer escapes the beat today: one `<Sequence>` per placed item with
+no `durationInFrames`, on the reel's clock, "each entering on its own beat and
+none of them leaving". So the mechanism is proven. Its two limits are exactly
+what has to be lifted:
+
+| `place` today | what gap #1 needs |
+|---|---|
+| `file` is required — a picture or a video, never a title, a table, a lab drawing or a footage box | **any element**, the same `screen` a beat writes |
+| no `durationInFrames` — it enters and never leaves | **a span**, so it can end where it should |
+
+Everything else `place` carries is worth keeping and is orthogonal: fractional
+`x`/`y`/`w`, `blend`, `glow`, `opacity`, `label`, the `linkFrom` connector, and
+the clip at `STAGE_BOTTOM_REEL` that keeps it off the caption band.
+
+The shape, then, is a reel-level list whose entries are a screen plus a span:
+
+```json
+"elements": [
+  { "screen": { "type": "footage", "spec": {…} }, "from": "s3.start", "to": "s5.end" },
+  { "screen": { "type": "title", "text": "…" }, "span": "s7" },
+  { "screen": { "type": "media", "file": "logo.png" }, "at": "cut2", "x": 0.8, "y": 0.2, "w": 0.15 }
+]
+```
+
+`shots` dissolve into it — a shot is one of these whose span happens to sit
+inside a beat — and `place` becomes the case where the screen is a file and
+the span has no end. Two keys collapse into one list rather than a third
+mechanism joining them.
+
+**The one decision I would rather have contested than assume: the geometry.**
+Two live in the engine today and they do not meet. A beat's screen is laid in
+the STAGE COLUMN (top 260, sides 120 and 190, the type measure); a placed item
+is positioned fractionally anywhere on the canvas. A reel-level element has to
+pick, and neither answer is free — the column is what makes type read as type
+and a table line up, while fractions are what let a picture sit in a corner.
+My recommendation is that an element **keeps the geometry its screen type
+already has** (a title in the column, a footage box against the canvas, a file
+fractionally placed) and that `x`/`y`/`w` override it when written, because
+that is the rule that breaks nothing already rendering. But it is the join
+between two systems, and joins are where this engine has hurt before.
+
 ## Order of work
 
 1. This document, contested.
