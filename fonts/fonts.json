@@ -1,0 +1,158 @@
+[
+ {
+  "family": "Anton",
+  "file": "anton/Anton-Regular.woff2",
+  "weight": "400",
+  "style": "normal"
+ },
+ {
+  "family": "Archivo Black",
+  "file": "archivoblack/ArchivoBlack-Regular.woff2",
+  "weight": "400",
+  "style": "normal"
+ },
+ {
+  "family": "Bangers",
+  "file": "bangers/Bangers-Regular.woff2",
+  "weight": "400",
+  "style": "normal"
+ },
+ {
+  "family": "Bebas Neue",
+  "file": "bebasneue/BebasNeue-Regular.woff2",
+  "weight": "400",
+  "style": "normal"
+ },
+ {
+  "family": "Figtree",
+  "file": "figtree/Figtree-Italic.woff2",
+  "weight": "300 900",
+  "style": "italic"
+ },
+ {
+  "family": "Figtree",
+  "file": "figtree/Figtree.woff2",
+  "weight": "300 900",
+  "style": "normal"
+ },
+ {
+  "family": "Inter",
+  "file": "inter/Inter-Italic.woff2",
+  "weight": "100 900",
+  "style": "italic"
+ },
+ {
+  "family": "Inter",
+  "file": "inter/Inter.woff2",
+  "weight": "100 900",
+  "style": "normal"
+ },
+ {
+  "family": "League Spartan",
+  "file": "leaguespartan/LeagueSpartan.woff2",
+  "weight": "100 900",
+  "style": "normal"
+ },
+ {
+  "family": "Lilita One",
+  "file": "lilitaone/LilitaOne-Regular.woff2",
+  "weight": "400",
+  "style": "normal"
+ },
+ {
+  "family": "Luckiest Guy",
+  "file": "luckiestguy/LuckiestGuy-Regular.woff2",
+  "weight": "400",
+  "style": "normal"
+ },
+ {
+  "family": "Montserrat",
+  "file": "montserrat/Montserrat-Italic.woff2",
+  "weight": "100 900",
+  "style": "italic"
+ },
+ {
+  "family": "Montserrat",
+  "file": "montserrat/Montserrat.woff2",
+  "weight": "100 900",
+  "style": "normal"
+ },
+ {
+  "family": "Nunito",
+  "file": "nunito/Nunito-Italic.woff2",
+  "weight": "200 1000",
+  "style": "italic"
+ },
+ {
+  "family": "Nunito",
+  "file": "nunito/Nunito.woff2",
+  "weight": "200 1000",
+  "style": "normal"
+ },
+ {
+  "family": "Outfit",
+  "file": "outfit/Outfit.woff2",
+  "weight": "100 900",
+  "style": "normal"
+ },
+ {
+  "family": "Poppins",
+  "file": "poppins/Poppins-Black.woff2",
+  "weight": "900",
+  "style": "normal"
+ },
+ {
+  "family": "Poppins",
+  "file": "poppins/Poppins-BlackItalic.woff2",
+  "weight": "900",
+  "style": "italic"
+ },
+ {
+  "family": "Poppins",
+  "file": "poppins/Poppins-Bold.woff2",
+  "weight": "700",
+  "style": "normal"
+ },
+ {
+  "family": "Poppins",
+  "file": "poppins/Poppins-BoldItalic.woff2",
+  "weight": "700",
+  "style": "italic"
+ },
+ {
+  "family": "Poppins",
+  "file": "poppins/Poppins-ExtraBold.woff2",
+  "weight": "800",
+  "style": "normal"
+ },
+ {
+  "family": "Poppins",
+  "file": "poppins/Poppins-ExtraBoldItalic.woff2",
+  "weight": "800",
+  "style": "italic"
+ },
+ {
+  "family": "Poppins",
+  "file": "poppins/Poppins-SemiBold.woff2",
+  "weight": "600",
+  "style": "normal"
+ },
+ {
+  "family": "Rubik",
+  "file": "rubik/Rubik-Italic.woff2",
+  "weight": "300 900",
+  "style": "italic"
+ },
+ {
+  "family": "Rubik",
+  "file": "rubik/Rubik.woff2",
+  "weight": "300 900",
+  "style": "normal"
+ },
+ {
+  "family": "TikTok Sans",
+  "file": "tiktoksans/TikTokSans.woff2",
+  "weight": "300 900",
+  "style": "normal"
+ }
+]

@@ -13,7 +13,7 @@
 // no elements of its own still renders — it just renders in grey.
 
 import { bundle } from "@remotion/bundler";
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { config, elementsDir, genDir, kitDir, projectDir, publicDir } from "./project.mjs";
 import { CAPTION_DEFAULTS, CAPTION_FACE, SAFE_DEFAULTS } from "../src/lab/subtitles.mjs";
@@ -166,6 +166,12 @@ export const projectElementNames = () => {
  */
 export const bundleEntry = async (entryPoint, { onProgress } = {}) => {
   mkdirSync(genDir, { recursive: true });
+  // The caption faces ship WITH the engine (fonts/, OFL and Apache files,
+  // licences beside them). A face named in a CSS stack used to render only if
+  // it happened to be installed on the machine, and a missing one fell
+  // through the stack without a word. src/fonts.ts loads every file in
+  // fonts/fonts.json from the project's public dir before the first frame.
+  cpSync(path.join(kitDir, "fonts"), path.join(publicDir, "fonts"), { recursive: true });
   const themeFile = writeTheme() ?? path.join(kitDir, "src", "theme.default.ts");
   const elementsFile =
     writeElements() ?? path.join(kitDir, "src", "elements.default.ts");

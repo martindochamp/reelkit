@@ -22,6 +22,7 @@
     "scripts",
     "docs",
     "presets",
+    "fonts",
     "templates",
     "tsconfig.json",
     "remotion.config.ts"

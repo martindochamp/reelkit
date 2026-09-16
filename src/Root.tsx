@@ -1,4 +1,5 @@
 import React from "react";
+import "./fonts";
 import { Composition, Still } from "remotion";
 import {
   ASCII_CLIP_FPS,
