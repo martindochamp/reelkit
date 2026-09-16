@@ -71,6 +71,62 @@ export const parseAnchor = (a, fps = 30) => {
 const ownerOf = (name) => String(name).split(".")[0];
 
 /**
+ * Tile a beat with its shots: fixed lengths from `seconds`, the rest shared
+ * by `weight`, and the rounding absorbed by the last WEIGHTED shot — a shot
+ * that named its own seconds asked for a length and gets to keep it.
+ *
+ * Moved out of render-reel.mjs 2026-09-16, where it had no test at all. It
+ * comes here rather than staying there because the timeline is about to place
+ * these same tiles, and two tilers would drift the way two `msToFrames` did.
+ *
+ * @param {{seconds?: number, weight?: number}[]} shots
+ * @param {number} frames the beat's own length
+ * @param {string} where the post and beat, for a refusal that points at one picture
+ * @returns {{shot: any, startFrame: number, durationInFrames: number}[]}
+ */
+export const layShots = (shots, frames, where, { fps = 30 } = {}) => {
+  const fixed = shots.map((s) => (s.seconds != null ? msToFrames(s.seconds * 1000, fps) : null));
+  const weights = shots.map((s, k) => (fixed[k] != null ? 0 : Math.max(0, s.weight ?? 1)));
+  const fixedTotal = fixed.reduce((n, f) => n + (f ?? 0), 0);
+  const weightTotal = weights.reduce((n, w) => n + w, 0);
+  const free = frames - fixedTotal;
+  if (free < 0) {
+    throw new Error(
+      `${where}: the shots ask for ${(fixedTotal / fps).toFixed(2)} s and the ` +
+        `beat runs ${(frames / fps).toFixed(2)} s. Shorten a shot, hold the beat ` +
+        `longer, or drop a \`seconds\` and let that shot take what is left.`,
+    );
+  }
+  const lengths = fixed.map((f, k) =>
+    f != null ? f : weightTotal ? Math.round((free * weights[k]) / weightTotal) : 0,
+  );
+  // Into the last WEIGHTED shot where there is one: a shot that named its
+  // own seconds asked for a length and gets to keep it.
+  let absorber = lengths.length - 1;
+  for (let k = lengths.length - 1; k >= 0; k--) {
+    if (fixed[k] == null) {
+      absorber = k;
+      break;
+    }
+  }
+  lengths[absorber] += frames - lengths.reduce((n, f) => n + f, 0);
+  const short = lengths.findIndex((f) => f < 1);
+  if (short !== -1) {
+    throw new Error(
+      `${where}: shot ${short + 1} lands on ${lengths[short]} frame(s) — a ` +
+        `picture nobody sees. Give the beat more to say, hold it longer, or ` +
+        `cut the shot.`,
+    );
+  }
+  let at = 0;
+  return lengths.map((durationInFrames, k) => {
+    const startFrame = at;
+    at += durationInFrames;
+    return { shot: shots[k], startFrame, durationInFrames };
+  });
+};
+
+/**
  * The edges that exist before any element is placed: the reel's own bounds,
  * each beat, each cut, and each SENTENCE.
  *

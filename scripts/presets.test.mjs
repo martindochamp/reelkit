@@ -18,7 +18,7 @@
 
 import { applyPreset, resolvePresets } from "./presets.mjs";
 import { motionAt, motionEnd, motionStyle, originPx } from "../src/lab/motion.mjs";
-import { edgesOf, layOut, msToFrames, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
+import { edgesOf, layOut, layShots, msToFrames, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
 
 let pass = 0, fail = 0;
 const ok = (label, cond, got) => {
@@ -751,6 +751,26 @@ ok("no word edge is published — an estimate must not look like a measurement",
    Object.keys(TL_EDGES).every((k) => !/^w\d/.test(k)));
 ok("the edges drop straight into the resolver",
    layOut([{ id: "cap", span: "s2" }], TL_EDGES).cap.length === 27);
+
+// The shot tiler, which lived in render-reel.mjs with no test at all. Its
+// three behaviours are worth pinning before the timeline places the same
+// tiles: a named `seconds` is kept exactly, weights share what is left, and
+// the ROUNDING goes into the last weighted shot rather than the last shot.
+const TL_SHOTS = (shots, frames) => layShots(shots, frames, "probe", { fps: 30 });
+ok("three plain shots split a beat in three",
+   TL_SHOTS([{}, {}, {}], 90).map((s) => s.durationInFrames).join(",") === "30,30,30");
+ok("and they run back to back from zero",
+   TL_SHOTS([{}, {}, {}], 90).map((s) => s.startFrame).join(",") === "0,30,60");
+ok("a shot that named its seconds keeps them to the frame",
+   TL_SHOTS([{}, {}, { seconds: 1 }], 131)[2].durationInFrames === 30);
+ok("and the rounding lands on the last WEIGHTED shot, not the last one",
+   TL_SHOTS([{}, {}, { seconds: 1 }], 131).map((s) => s.durationInFrames).join(",") === "51,50,30");
+ok("a weight takes its share of what the voice leaves",
+   TL_SHOTS([{ weight: 3 }, { weight: 1 }], 80).map((s) => s.durationInFrames).join(",") === "60,20");
+throws("shots that ask for more than the beat runs are refused",
+   () => TL_SHOTS([{ seconds: 3 }], 60), /Shorten a shot/);
+throws("and a shot nobody could see is refused too",
+   () => TL_SHOTS([{ seconds: 1 }, {}, {}], 31), /picture nobody sees/);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

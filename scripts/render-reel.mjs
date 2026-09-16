@@ -51,7 +51,7 @@ import { sourcedReady as sourcedEffect } from "./sfx-import.mjs";
 import { config } from "./project.mjs";
 import { postsDir, projectDir } from "./stage.mjs";
 import { presetBank, resolvePresets } from "./presets.mjs";
-import { msToFrames as framesOfMs } from "../src/lab/timeline.mjs";
+import { layShots as tlLayShots, msToFrames as framesOfMs } from "../src/lab/timeline.mjs";
 import { warnTierList } from "./tier-legibility.mjs";
 import { forget, resolveVoice, speak } from "./tts.mjs";
 
@@ -816,48 +816,12 @@ const stageBg = (bg) => {
  * shot absorbs the rounding, and the whole remainder when every shot named
  * its own seconds. A shot that would land under one frame is refused — it
  * is a picture nobody sees, and dropping it silently is how a render lies.
+ *
+ * It moved to src/lab/timeline.mjs on 2026-09-16, where it finally has a
+ * test: the timeline is about to place these same tiles, and two tilers
+ * would drift the way the two `msToFrames` were about to.
  */
-const layShots = (shots, frames, where) => {
-  const fixed = shots.map((s) => (s.seconds != null ? msToFrames(s.seconds * 1000) : null));
-  const weights = shots.map((s, k) => (fixed[k] != null ? 0 : Math.max(0, s.weight ?? 1)));
-  const fixedTotal = fixed.reduce((n, f) => n + (f ?? 0), 0);
-  const weightTotal = weights.reduce((n, w) => n + w, 0);
-  const free = frames - fixedTotal;
-  if (free < 0) {
-    throw new Error(
-      `${where}: the shots ask for ${(fixedTotal / FPS).toFixed(2)} s and the ` +
-        `beat runs ${(frames / FPS).toFixed(2)} s. Shorten a shot, hold the beat ` +
-        `longer, or drop a \`seconds\` and let that shot take what is left.`,
-    );
-  }
-  const lengths = fixed.map((f, k) =>
-    f != null ? f : weightTotal ? Math.round((free * weights[k]) / weightTotal) : 0,
-  );
-  // Into the last WEIGHTED shot where there is one: a shot that named its
-  // own seconds asked for a length and gets to keep it.
-  let absorber = lengths.length - 1;
-  for (let k = lengths.length - 1; k >= 0; k--) {
-    if (fixed[k] == null) {
-      absorber = k;
-      break;
-    }
-  }
-  lengths[absorber] += frames - lengths.reduce((n, f) => n + f, 0);
-  const short = lengths.findIndex((f) => f < 1);
-  if (short !== -1) {
-    throw new Error(
-      `${where}: shot ${short + 1} lands on ${lengths[short]} frame(s) — a ` +
-        `picture nobody sees. Give the beat more to say, hold it longer, or ` +
-        `cut the shot.`,
-    );
-  }
-  let at = 0;
-  return lengths.map((durationInFrames, k) => {
-    const startFrame = at;
-    at += durationInFrames;
-    return { shot: shots[k], startFrame, durationInFrames };
-  });
-};
+const layShots = (shots, frames, where) => tlLayShots(shots, frames, where, { fps: FPS });
 
 for (const name of names) {
   const post = JSON.parse(
