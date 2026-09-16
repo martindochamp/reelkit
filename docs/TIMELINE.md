@@ -184,6 +184,43 @@ of replacing it.
    covers them, and the key goes away after that. Deleting a feature before
    its replacement is proven is how a working pipeline breaks.
 
+## What a post writes first — the shots
+
+Everything above is machinery a post cannot reach yet. The first thing to open
+is the shot, because it is the only place where a post already says *when*
+(`seconds`, `weight`) and because Martin's ruling — shots dissolve into
+elements with spans — has nowhere to dissolve into until a post can write one.
+
+A shot keeps `seconds` and `weight`, which tile and are what nearly every
+existing post uses. It gains the anchor form:
+
+```json
+"shots": [
+  { "screen": {…}, "span": "s2" },
+  { "screen": {…}, "at": "s3.start", "to": "s3.end" },
+  { "screen": {…}, "at": "cut4", "seconds": 1.2 }
+]
+```
+
+Three rules, and the third is the one worth arguing with:
+
+1. **A shot names its time one way.** `span` with `seconds`, or `at` with
+   `weight`, is refused as ambiguous — the resolver already refuses `span`
+   beside its own edges, and this is the same refusal one level up.
+2. **Anchors and tiles do not mix inside one beat.** Either every shot tiles
+   or every shot is anchored. A beat where two shots tile around a third that
+   anchored itself has no defined answer for what "the rest" means, and
+   inventing one would be the kind of silent arithmetic this migration exists
+   to remove.
+3. **An anchored shot may leave the beat empty.** Tiles cover the beat by
+   construction; anchors do not. A shot anchored from `s3.start` to `s3.end`
+   inside a beat that runs longer leaves frames with no picture — which is
+   either a hole nobody wants, or precisely the wordless shot the references
+   hold and the beat model cannot express. **My recommendation: allow it and
+   say so on the console**, because refusing it would re-impose the rule this
+   whole document exists to lift. It is the one call in here I would rather
+   have contested than assumed.
+
 ## Order of work
 
 1. This document, contested.
