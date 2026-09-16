@@ -52,7 +52,7 @@ import { config } from "./project.mjs";
 import { postsDir, projectDir } from "./stage.mjs";
 import { presetBank, resolvePresets } from "./presets.mjs";
 import {
-  layShots as tlLayShots,
+  layoutOfBeat,
   layoutOfReel,
   msToFrames as framesOfMs,
 } from "../src/lab/timeline.mjs";
@@ -825,7 +825,22 @@ const stageBg = (bg) => {
  * test: the timeline is about to place these same tiles, and two tilers
  * would drift the way the two `msToFrames` were about to.
  */
-const layShots = (shots, frames, where) => tlLayShots(shots, frames, where, { fps: FPS });
+// THE SWAP, 2026-09-16: the shots are now placed BY THE RESOLVER rather than
+// by the tiler alone. `layoutOfBeat` runs the same tiling and then lays the
+// tiles out through anchors, returning the shape this file has always used,
+// so nothing downstream changed and the refusals still name the same picture.
+//
+// It is beat-local on purpose. The whole-reel layout needs every beat's
+// length before it can place anything, and a beat's length is not known until
+// its line has been spoken — restructuring this loop into two passes to get
+// that would be a large change for no gain, since a shot only ever needs its
+// own beat's length.
+//
+// The cross-check below still compares the two layouts, and it is now a
+// weaker check than it was: the shot placements come from the same code on
+// both sides. What it still proves on its own is the beat placement and the
+// accumulation of beat starts down the reel.
+const layShots = (shots, frames, where) => layoutOfBeat(shots, frames, where, { fps: FPS });
 
 for (const name of names) {
   const post = JSON.parse(

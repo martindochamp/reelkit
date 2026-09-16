@@ -18,7 +18,7 @@
 
 import { applyPreset, resolvePresets } from "./presets.mjs";
 import { motionAt, motionEnd, motionStyle, originPx } from "../src/lab/motion.mjs";
-import { edgesOf, layOut, layShots, layoutOfReel, msToFrames, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
+import { edgesOf, layOut, layShots, layoutOfBeat, layoutOfReel, msToFrames, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
 
 let pass = 0, fail = 0;
 const ok = (label, cond, got) => {
@@ -796,6 +796,19 @@ ok("which matches the frames the renderer actually produced: 128 and 165",
    TL_REEL.beat2s2.start === 128 && TL_REEL.beat2s3.start === 165);
 ok("and the last shot ends exactly where the beat does",
    TL_REEL.beat2s3.start + TL_REEL.beat2s3.length === TL_REEL.beat2.start + TL_REEL.beat2.length);
+
+// One beat through the resolver, in the shape `layShots` returns — this is
+// what lets the renderer stop having a placement path of its own without
+// restructuring its beat loop. The numbers must be the tiler's, to the frame.
+const TL_BEAT = layoutOfBeat([{}, {}, { seconds: 0.5 }], 90, "beat1", { fps: 30 });
+ok("it returns one entry per shot, carrying the shot itself",
+   TL_BEAT.length === 3 && TL_BEAT[2].shot.seconds === 0.5);
+ok("beat-local frames, exactly as the tiler gave them",
+   TL_BEAT.map((t) => `${t.startFrame}+${t.durationInFrames}`).join(" ") === "0+38 38+37 75+15");
+ok("and it agrees with layShots shot for shot",
+   JSON.stringify(TL_BEAT.map((t) => [t.startFrame, t.durationInFrames])) ===
+   JSON.stringify(layShots([{}, {}, { seconds: 0.5 }], 90, "beat1", { fps: 30 })
+     .map((t) => [t.startFrame, t.durationInFrames])));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

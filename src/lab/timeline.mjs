@@ -45,6 +45,36 @@
 export const msToFrames = (ms, fps = 30) => Math.round((ms / 1000) * fps);
 
 /**
+ * One beat's shots, placed through the resolver rather than by the tiler
+ * alone — same shape `layShots` returns, so a caller swaps one call for the
+ * other and nothing downstream notices.
+ *
+ * This is how the renderer stops having its own placement path without
+ * restructuring its beat loop into two passes: the whole-reel layout needs
+ * every beat's length before it can place anything, but a shot only ever
+ * needs its own beat's. The frames are beat-local, exactly as before.
+ *
+ * @param {{seconds?: number, weight?: number}[]} shots
+ * @param {number} frames the beat's own length
+ * @param {string} id the beat's name, for anchors and for a refusal that
+ *   points at one picture
+ */
+export const layoutOfBeat = (shots, frames, id, { fps = 30 } = {}) => {
+  const named = { [`${id}.start`]: 0, [`${id}.end`]: frames };
+  const placed = layShots(shots, frames, id, { fps }).map((t, k) => ({
+    id: `${id}s${k + 1}`,
+    from: { at: `${id}.start`, offset: `+${t.startFrame}f` },
+    seconds: t.durationInFrames / fps,
+  }));
+  const out = layOut(placed, named, { fps, end: frames });
+  return placed.map((p, k) => ({
+    shot: shots[k],
+    startFrame: out[p.id].start,
+    durationInFrames: out[p.id].length,
+  }));
+};
+
+/**
  * A whole reel laid out through the resolver: every beat, and every shot
  * inside a beat that has them, as a start and a length on the one clock.
  *
