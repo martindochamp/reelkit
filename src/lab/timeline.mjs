@@ -44,6 +44,40 @@
  */
 export const msToFrames = (ms, fps = 30) => Math.round((ms / 1000) * fps);
 
+/**
+ * A whole reel laid out through the resolver: every beat, and every shot
+ * inside a beat that has them, as a start and a length on the one clock.
+ *
+ * This is phase 3 of docs/TIMELINE.md and it is deliberately NOT fed the
+ * renderer's own answers. A beat's length comes from the staged beat, but a
+ * shot's placement is derived HERE, from the authored `seconds` and `weight`
+ * through `layShots` — so comparing this against what render-reel.mjs
+ * produces compares two paths rather than one path with itself.
+ *
+ * Ids are stable and speakable: `beat3` for the beat, `beat3s2` for its
+ * second shot. They are what an anchor will name once posts write anchors.
+ *
+ * @param {{durationInFrames: number, shots?: {seconds?: number, weight?: number}[],
+ *          sentences?: {om: number, dm: number}[]}[]} beats
+ */
+export const layoutOfReel = (beats, { fps = 30 } = {}) => {
+  const named = edgesOf(beats, { fps });
+  const placed = [];
+  beats.forEach((b, i) => {
+    const id = `beat${i + 1}`;
+    placed.push({ id, from: { at: `${id}.start` }, seconds: b.durationInFrames / fps });
+    if (!Array.isArray(b.shots) || b.shots.length === 0) return;
+    layShots(b.shots, b.durationInFrames, id, { fps }).forEach((t, k) => {
+      placed.push({
+        id: `${id}s${k + 1}`,
+        from: { at: `${id}.start`, offset: `+${t.startFrame}f` },
+        seconds: t.durationInFrames / fps,
+      });
+    });
+  });
+  return layOut(placed, named, { fps, end: named["reel.end"] });
+};
+
 /** `"+4f"` → frames, `0.2` → seconds × fps, `"-0.3"` → seconds × fps. */
 export const offsetFrames = (offset, fps = 30) => {
   if (offset == null) return 0;

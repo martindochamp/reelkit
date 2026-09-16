@@ -18,7 +18,7 @@
 
 import { applyPreset, resolvePresets } from "./presets.mjs";
 import { motionAt, motionEnd, motionStyle, originPx } from "../src/lab/motion.mjs";
-import { edgesOf, layOut, layShots, msToFrames, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
+import { edgesOf, layOut, layShots, layoutOfReel, msToFrames, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
 
 let pass = 0, fail = 0;
 const ok = (label, cond, got) => {
@@ -771,6 +771,31 @@ throws("shots that ask for more than the beat runs are refused",
    () => TL_SHOTS([{ seconds: 3 }], 60), /Shorten a shot/);
 throws("and a shot nobody could see is refused too",
    () => TL_SHOTS([{ seconds: 1 }, {}, {}], 31), /picture nobody sees/);
+
+// A whole reel through the resolver. The numbers below are the ones a real
+// render produced for posts/_shots.json — three beats of 90, 90 and 60
+// frames — and the shot placements were confirmed frame by frame on the
+// output: 30/30/30, then 38/37/15 with the fixed shot LAST, which is the only
+// arrangement where the absorber has to tell "last shot" from "last weighted".
+const TL_REEL = layoutOfReel([
+  { durationInFrames: 90, shots: [{}, {}, {}] },
+  { durationInFrames: 90, shots: [{}, {}, { seconds: 0.5 }] },
+  { durationInFrames: 60 },
+], { fps: 30 });
+ok("a beat lands at its own start and runs its own length",
+   TL_REEL.beat1.start === 0 && TL_REEL.beat1.length === 90);
+ok("the second beat follows the first", TL_REEL.beat2.start === 90);
+ok("a beat with no shots places only itself", TL_REEL.beat3s1 === undefined);
+ok("three plain shots tile the first beat in thirds",
+   [TL_REEL.beat1s1, TL_REEL.beat1s2, TL_REEL.beat1s3].map((s) => s.start).join(",") === "0,30,60");
+ok("and the shots of the SECOND beat are placed on the reel's clock, not the beat's",
+   TL_REEL.beat2s1.start === 90);
+ok("the absorber's frame comes off the last WEIGHTED shot, here too",
+   [TL_REEL.beat2s1, TL_REEL.beat2s2, TL_REEL.beat2s3].map((s) => s.length).join(",") === "38,37,15");
+ok("which matches the frames the renderer actually produced: 128 and 165",
+   TL_REEL.beat2s2.start === 128 && TL_REEL.beat2s3.start === 165);
+ok("and the last shot ends exactly where the beat does",
+   TL_REEL.beat2s3.start + TL_REEL.beat2s3.length === TL_REEL.beat2.start + TL_REEL.beat2.length);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
