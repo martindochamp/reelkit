@@ -110,6 +110,8 @@ none of it renders the same pixels and the same samples.
 
 Two things worth keeping from the run. The cross-check fired on a real
 production post for the first time and stayed silent, which is worth more than
-it staying silent on a probe written for it. And the hashes are of the DECODED
+it staying silent on a probe written for it. (Worth less than it looked: by
+then both sides ran the same code, so silence proved nothing, and the check
+left the render path later that day for `scripts/presets.test.mjs`.) And the hashes are of the DECODED
 streams, not the files — a container's metadata can differ while the picture
 does not, and comparing files would have produced a false alarm.

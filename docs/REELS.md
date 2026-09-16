@@ -128,6 +128,12 @@ with a hole in it.
 A `reel` block rides in the same post JSON as the slides (one topic, one
 file, one brief), but the text is written fresh:
 
+**A key the engine does not read is refused**, before the gates and before
+any line is billed, with the nearest real key when there is one
+(`post.reel.beats[3].motoin — did you mean "motion"?`). A misspelt key used
+to render clean and wrong. The list lives in `scripts/post-keys.mjs`; a lab
+element's `props` are not checked.
+
 ```json
 "reel": {
   "voice": { "exaggeration": 0.5 },

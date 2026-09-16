@@ -1,7 +1,12 @@
 # Timeline — one clock, and anchors on it
 
-**Nothing here is built.** This is the surface to agree on before a line moves,
-written 2026-09-13 against what the tree actually does today.
+**Status, 2026-09-16.** Written 2026-09-13 as a surface to agree on before a
+line moved; much of it is built now. Built: the resolver (`src/lab/timeline.mjs`),
+`span`, sentence edges, anchored shots and anchored cues, and `shotProps`
+placing through `layoutOfBeat`. Not built: the other seven timing paths still
+run beside the resolver rather than through it, nothing listed under "What gets
+deleted" is deleted yet, and the reel-level element that outlives its beat is
+still only a surface (last section).
 
 Martin's go, 2026-09-13: *"tu peux carrément tout migrer, le coût qu'on a en ne
 faisant rien c'est une dette technologique énorme, la labeur n'existe pas."*
@@ -119,8 +124,8 @@ five probe projects, 2026-09-16:
 
 | key | posts that write it | what it actually is |
 |---|---|---|
-| `cues` | **1** (Tally) | a deletion. Fold into one anchor. |
-| `shots` | **7**, all probes, 0 in production | a deletion, as Martin ruled — after parity. |
+| `cues` | **1** (Tally) | **not a deletion after all** — it is the only way a silent beat says when, so it learned anchors instead (`aede97f`). `[+]` is the other half and stays. |
+| `shots` | **9** on recount, all probes, 0 in production | a deletion, as Martin ruled — once reel-level elements exist to dissolve into. |
 | `host` | **4**, all in the casino probe | **blocked**, see below |
 | `chrome.entrance` | **4**, the same four | **blocked**, same corpus |
 | `hold` | **63** — 45 of 101 Tally, 2 Papyr, 16 probes | **not a deletion at all.** A migration of the whole corpus. |
@@ -284,5 +289,7 @@ between two systems, and joins are where this engine has hurt before.
 2. The resolver, pure and tested without a bundler — anchors in, starts and
    lengths out. Cycles and dangling names refused there.
 3. Render through it with the existing keys mapped onto anchors, and prove
-   parity: the same post, the same frames.
-4. Only then the new vocabulary in posts, and the deletions above.
+   parity: the same post, the same frames. *Done for shots only; seven paths
+   remain.*
+4. Only then the new vocabulary in posts, and the deletions above. *Started
+   before step 3 finished: anchored shots and cues shipped on 2026-09-16.*

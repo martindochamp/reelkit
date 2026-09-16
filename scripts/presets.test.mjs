@@ -17,6 +17,7 @@
 // that will not be tested.
 
 import { applyPreset, resolvePresets } from "./presets.mjs";
+import { unknownKeys } from "./post-keys.mjs";
 import { motionAt, motionEnd, motionStyle, originPx } from "../src/lab/motion.mjs";
 import { cueFramesOf, edgesOf, layOut, layShots, layoutOfBeat, layoutOfReel, msToFrames, offsetFrames, parseAnchor } from "../src/lab/timeline.mjs";
 
@@ -876,6 +877,46 @@ ok("and it agrees with layShots shot for shot",
    JSON.stringify(TL_BEAT.map((t) => [t.startFrame, t.durationInFrames])) ===
    JSON.stringify(layShots([{}, {}, { seconds: 0.5 }], 90, "beat1", { fps: 30 })
      .map((t) => [t.startFrame, t.durationInFrames])));
+
+// ---------------------------------------------------------------------
+// post-keys.mjs — a key nothing reads is refused, not rendered around.
+console.log("\npost keys");
+const KEYS_OF = (post) => unknownKeys(post).map((f) => f.path + (f.suggestion ? `>${f.suggestion}` : ""));
+const CLEAN_POST = {
+  theme: "dark", youtubeTitle: "t", _note: "comments are free",
+  reel: {
+    preset: "arrive", captions: "bump", sfx: true,
+    motion: { opacity: { from: 0, to: 1, frames: 6 }, scale: [0.94, 1] },
+    beats: [
+      { say: "[+]One.", screen: { type: "lab", element: "unitgrid", props: { anything: 1 } } },
+      { hold: 2, field: null, cues: [0.5, { at: "beat2.start", offset: 0.2 }],
+        screen: { type: "cta", lines: ["a", "b"], button: "go" } },
+      { say: "Two.", shots: [
+          { weight: 1, screen: { type: "footage", spec: { preset: "card", focus: { zoom: 1.2 } } } },
+          { weight: 1, motion: null, screen: { type: "title", text: "T" } } ] },
+    ],
+  },
+};
+ok("a post the engine fully reads comes back with nothing to report", KEYS_OF(CLEAN_POST).length === 0, KEYS_OF(CLEAN_POST));
+const TYPO_POST = structuredClone(CLEAN_POST);
+TYPO_POST.reel.presett = TYPO_POST.reel.preset; delete TYPO_POST.reel.preset;
+TYPO_POST.reel.beats[0].motoin = { scale: [0.9, 1] };
+TYPO_POST.reel.beats[1].screen.line = "the sign-off";
+TYPO_POST.reel.motion.opacity.frame = 6;
+TYPO_POST.reel.beats[2].shots[0].screen.spec.focus.zoon = 1;
+const TYPOS = KEYS_OF(TYPO_POST);
+ok("the 2026-09-16 typos are caught, the reel's and the beat's",
+   TYPOS.includes("post.reel.presett>preset") && TYPOS.includes("post.reel.beats[0].motoin>motion"), TYPOS);
+ok("and the Papyr cta that wrote `line` for `lines`",
+   TYPOS.includes("post.reel.beats[1].screen.line>lines"), TYPOS);
+ok("down to a motion property and a footage focus",
+   TYPOS.includes("post.reel.motion.opacity.frame>frames") &&
+   TYPOS.includes("post.reel.beats[2].shots[0].screen.spec.focus.zoon>zoom"), TYPOS);
+ok("with nothing else reported", TYPOS.length === 5, TYPOS);
+ok("a key with no near neighbour is still refused, just without a guess",
+   unknownKeys({ reel: { beats: [], reel_60s_original: {} } })[0]?.suggestion === null);
+ok("a lab element's props are its own and are not walked",
+   unknownKeys({ reel: { beats: [{ screen: { type: "lab", element: "x", props: { whatever: 1 } } }] } }).length === 0);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

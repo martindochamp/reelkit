@@ -143,8 +143,9 @@ Exits do not count towards it: they end when the element does.
 3. **Unknown keys refused.** The moment every element takes a `motion`, a
    `motion` in the wrong place renders clean and does nothing. That failure
    has already cost two sessions a render (`moveTo`, `hideHost`,
-   `reel.theme`). Nothing outside `scripts/presets.mjs` validates keys today.
-   **Still undone.**
+   `reel.theme`). **Done 2026-09-16:** `scripts/post-keys.mjs` refuses a key
+   nothing reads, anywhere from the post down to a motion property, before
+   the first gate. A lab element's `props` are still unchecked.
 
 ## What it replaces, and has not yet
 
