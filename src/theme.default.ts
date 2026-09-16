@@ -54,17 +54,18 @@ const theme: ThemeModule = {
     caption: CAPTION_FACE,
   },
   /**
-   * The caption setting that shipped for a year: 48 px, tracked, uppercase,
-   * on its own plate. Kept as the default so nothing changes for a project
-   * that has not asked — but named here, where a skin can disagree with it,
-   * instead of being frozen inside Reel.tsx.
-   */
-  /**
    * MEASURED, not chosen (Martin, 2026-09-09: "les soustitres avec la police
    * espacements positions et autres est parfaite, ça devrait être celle de
-   * défaut"). These are the exact values the casino reproduction ran on, read
-   * out of its own config — sans, 66/700, tight tracking, mixed case, no
-   * plate, the reference's 0.42 dim and its gold.
+   * défaut"), then CORRECTED on the Caption Floor, 2026-09-16: sans, 66/700
+   * on every word — no per-word weight change — a soft shadow, no stroke,
+   * mixed case, tight tracking, no plate. `CAPTION_DEFAULTS` carries the
+   * values, not a copy of them, so this file cannot drift from
+   * `scripts/bundle.mjs`'s own copy the way the two disagreed for a day.
+   *
+   * Two more of the 2026-09-16 rulings live inside `CAPTION_DEFAULTS` itself:
+   * no colour by default ("par défaut il ne faudrait pas de couleur") and
+   * `bump` as the default mode ("par rebond je trouve est meilleur par
+   * défaut"). See `src/lab/subtitles.mjs` for both, in full.
    *
    * What this REPLACED was the receipt look — 48/400, `0.08em`, uppercase,
    * plate on, 3 words. That was Tally's, it was never fitted to anything, and

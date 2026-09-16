@@ -32,9 +32,10 @@ this list is his):
 | the shadow | `shadow` |
 
 Two of those eight did not exist a day ago and two more were declared and
-drawn by nothing. The bank below is fourteen combinations of them, and the
-only reason it is a bank at all is that a combination of eight values is a
-thing you want to name once.
+drawn by nothing. The bank below is four combinations of them (it was
+fourteen until 2026-09-16 — see "Deleted 2026-09-16"), and the only reason it
+is a bank at all is that a combination of eight values is a thing you want to
+name once.
 
 **A look picks a stroke OR a shadow.** They are two devices for one job and
 the choice is a property of the letterform: a thick stroke on a tight or
@@ -43,21 +44,38 @@ grotesques take a `drop` and the rounded faces take 16 px of stroke.
 
 ## The floor, and the day it was not the floor
 
-`CAPTION_DEFAULTS` in `src/lab/subtitles.mjs` is THE caption default — sans,
-**66 / 700**, `-0.01em`, mixed case, no plate, 6 words, the reference's 0.42
-dim and its gold. Measured, not chosen (Martin, 2026-09-09: *"les soustitres
-avec la police espacements positions et autres est parfaite, ça devrait être
-celle de défaut"*), and the teardowns agree across references: no plate, heavy
-weight, mixed case, tight tracking, one accent colour.
+`CAPTION_DEFAULTS` in `src/lab/subtitles.mjs` is THE caption default. It has
+been corrected once since it was first measured, and both dates matter:
 
-**It lived in two places and they disagreed for a day.** The promotion landed
-in `src/theme.default.ts` — which is what a project with *no theme at all*
-gets — while `scripts/bundle.mjs` kept its own copy as a wall of `??`
-fallbacks: 48 px, weight 400, `0.08em`, uppercase, on a plate, and the caption
-face falling back to `mono`. That is the path every project that HAS a theme
-takes, which is all of them. So the measured look reached exactly the projects
-that do not exist, and the eight-preset sheet rendered on 2026-09-09 was
-judged through SF Mono at 48/400/uppercase.
+- **2026-09-09, measured.** Sans, 66/700, `-0.01em`, mixed case, no plate, 6
+  words, the reference's 0.42 dim and its gold (Martin: *"les soustitres avec
+  la police espacements positions et autres est parfaite, ça devrait être
+  celle de défaut"*).
+- **2026-09-16, corrected on the Caption Floor.** Martin judged the whole bank
+  rendered on identical footage and voice and called this one — the casino
+  replica — perfect, with two changes: `mode: "bump"` (*"par rebond je trouve
+  est meilleur par défaut"*) instead of `page`, and no colour at all
+  (*"par défaut il ne faudrait pas de couleur"*) instead of the gold. `dim`
+  moved to `null` in the same pass — see "`dim: null`, and where it now
+  lives" below.
+
+So `CAPTION_DEFAULTS` today is: `mode: "bump"`, sans, **66 / 700** on every
+word — no per-word weight change — `-0.01em`, mixed case, no plate, 6 words /
+40 chars, `dim: null`, `emphasisColor: null`, a soft shadow (`shadow: "auto"`)
+and no stroke. This is not a preset: it is what `theme.captions` resolves to
+when a project has named nothing, and `plain` (`{}`) is a name for exactly
+this floor.
+
+**It lived in two places and they disagreed for a day, once.** The 2026-09-09
+promotion landed in `src/theme.default.ts` — which is what a project with *no
+theme at all* gets — while `scripts/bundle.mjs` kept its own copy as a wall of
+`??` fallbacks: 48 px, weight 400, `0.08em`, uppercase, on a plate, and the
+caption face falling back to `mono`. That is the path every project that HAS a
+theme takes, which is all of them. So the measured look reached exactly the
+projects that do not exist, and the eight-preset sheet rendered on 2026-09-09
+was judged through SF Mono at 48/400/uppercase. `scripts/bundle.mjs` now reads
+`CAPTION_DEFAULTS` directly rather than keeping its own copy, so this cannot
+happen again — one object, however many consumers.
 
 One object now, merged under whatever a project says. A project that wants the
 receipt caption back states it — `.parity` does, because that fixture exists
@@ -69,8 +87,8 @@ picture across a cut is the band's **colour**, and that is `bandsOf`'s job —
 legibility per frame, style per sentence.
 
 ```json
-{ "subtitles": "hormozi" }
-{ "subtitles": { "preset": "hormozi", "fontSize": 56, "emphasisColor": "#E2483D" } }
+{ "subtitles": "beast" }
+{ "subtitles": { "preset": "beast", "fontSize": 56, "emphasisColor": "#E2483D" } }
 ```
 
 ## Three keys that had never been drawn
@@ -120,30 +138,38 @@ measurements rather than taste:
 
 | preset | what it is |
 |---|---|
-| `plain` | whatever the project themed. A name for the floor |
-| `card` | a solid plate under the words — the receipt look, the only one with a plate |
-| `karaoke` | the whole line stands dim at **0.42** and each word snaps to full on its cue, in one frame. The line never reflows, so the viewer can read ahead |
+| `plain` | whatever the project themed. A name for the floor — since 2026-09-16 the floor is the casino default itself, see above |
 | `accent` | exactly two colours ever appear; the gold follows the voice's stress and **persists** once printed, same size, same weight |
-| `hormozi` | big, heavy, upper, two or three words, no plate |
-| `hormozi-outline` | the same, with a **hollow** second emphasis level |
 | `outline` | white fill inside a hard black stroke, sentence case. The platform auto-caption — the only look here with **three** independent measurements behind it |
-| `beast` | the loud retention caption. `hormozi` plus that stroke, and **no numbers of its own** — see below |
-| `peterson` | one gold, all caps, no emphasis and no dim state at all. Measured, and plainer than it looks |
-| `chip` | black text in a white **rounded** plate, no stroke, no shadow. The UI-chip caption, measured twice |
-| `editorial` | a heavy grotesque with a `drop` and no stroke — the classy-and-thick half of the stroke/shadow choice |
-| `impact` | Impact, uppercase, 14 px of stroke. Condensed, so more fits the safe box at a size the rounded faces cannot reach |
-| `whisper` | small and low, out of the way of the picture |
-| `centred` | mid-frame, for a beat with no picture |
+| `beast` | the loud retention caption: 96 px uppercase, weight 800, three words, a rounded face and a heavy stroke, and **no numbers of its own** — see below |
+
+## Deleted 2026-09-16
+
+Martin judged the whole bank rendered on identical footage and voice — the
+Caption Floor artifact — and cut ten of the fourteen presets: `hormozi`,
+`hormozi-outline`, `impact`, `centred`, `karaoke`, `peterson`, `whisper`,
+`card`, `chip`, `editorial`. What survived the round, and what he corrected
+`CAPTION_DEFAULTS` to be afterward (see "The floor" above): a soft shadow, a
+stroke only ever paired with one (never carried alone), and one bold weight
+held uniformly across every word — no per-word weight change, no "the said
+word goes heavy" left anywhere. `plain`, `accent`, `outline` and `beast` are
+what is left of the bank; nothing that survived changed shape.
 
 ### `beast`, and where its numbers come from
 
 The bank's rule is that a look is measured and not invented, so this is worth
 being blunt about: **there is no MrBeast teardown in this repo.** `beast`
-therefore carries no numbers of its own. It is written as a spread of
-`hormozi` — itself measured on the chad reference, a 45 px uppercase cap with a
-gold payoff word at 2.6× — plus the stroke measured on ad-2, speechify-ad and
-design-tips. That spread *is* the difference between the two looks on screen,
-and it is code rather than a claim in a comment.
+therefore carries no numbers of its own. Its caps body — 96 px uppercase,
+weight 800, three words, no plate, `dim: null` — is measured on the chad
+reference, a 45 px uppercase cap with a gold payoff word at 2.6×, plus the
+stroke measured on ad-2, speechify-ad and design-tips. That is the whole
+difference between the two looks on screen, and it is code rather than a
+claim in a comment.
+
+That caps body used to be a shared `LOUD` constant with two other presets
+built the same way, `hormozi` and `hormozi-outline`; both were cut on
+2026-09-16 (see above), so it is inlined into `beast` now that it has one
+owner rather than kept as a constant for it.
 
 Two things to check against a real reference before trusting it: whether there
 is a drop shadow **under** the stroke (this has none, because none of the
@@ -168,30 +194,37 @@ And a thing worth knowing before choosing a ground for it: **a black stroke
 does no work over a black picture.** It is legibility over footage and over
 paper, which is what all three references use it for.
 
-### `dim: null` on everything that arrives
+### `dim: null`, and where it now lives
 
-Four presets now state it. It is a correction rather than a preference: the
-engine default carries the French reference's 0.42, and in a word-arrival mode
-the mere *presence* of `dim` makes the whole page stand dim and light up —
-which is that one reference's system and nobody else's. Measured on
-chad-48-55: *"No fade was found at any reset — every word arrives at full
-opacity on its first visible frame."*
+It used to be a correction several presets had to state for themselves, one at
+a time: the engine default carried the French reference's measured 0.42, and
+in a word-arrival mode the mere *presence* of `dim` makes the whole page stand
+dim and light up on cue — one reference's system, not every reel's. Measured
+on chad-48-55: *"No fade was found at any reset — every word arrives at full
+opacity on its first visible frame."* `beast` and `outline` both said
+`dim: null` for exactly that reason.
+
+Since 2026-09-16 the correction lives in `CAPTION_DEFAULTS` itself: the engine
+default is `null`. `outline` and `beast` still say it too — redundant now,
+not corrective, and harmless. A look that actually wants dim-and-light has to
+ask for it explicitly (`dim` as a number, plus `mode: "words"`), since neither
+is the default any more.
 
 ## The separation: a stroke, or a shadow
 
 Two devices for one job, and a look normally picks one. A thick stroke on a
 narrow or light letterform eats the counters and the word stops being
-readable — which is why `beast` can carry 8 px of it (a rounded face has the
+readable — which is why `beast` can carry 16 px of it (a rounded face has the
 room) and why every other face reaches for a halo instead.
 
 | shadow | what it is |
 |---|---|
-| `auto` | the default: the page's own colour over a flat beat, its own halo over pictures. These are the two string literals that were hardcoded in `Reel.tsx`, kept to the digit — the parity fixture compares bytes |
+| `auto` | the default: the page's own colour over a flat beat, its own halo over pictures. These are the two string literals that were hardcoded in `Reel.tsx`, kept to the digit — the parity fixture compares bytes. Also the engine default (`CAPTION_DEFAULTS.shadow`) since 2026-09-16 |
 | `spread` · `spread-art` | those two, by name, on any ground |
 | `contact` | a tight dark halo at zero offset. Reads as contact, not as a drop — the one to reach for instead of a stroke |
 | `drop` | an offset drop. Depth rather than separation |
 | `hard` | offset, no blur. The sticker, and it survives compression |
-| `none` | neither. `beast`, `outline` and `peterson` all say this, because their stroke or their colour already does the job |
+| `none` | neither. `beast` and `outline` both say this, because their stroke already does the job |
 
 A spec works too — `{ "shadow": { "y": 4, "blur": 12, "color": "#000" } }` — or
 a list of them for layers. A colour absent means *the page's own separation
@@ -251,18 +284,21 @@ against paper and misses the legibility floor; two shades down clears it at
 5.1 and looks the same.
 
 **One measured exception.** The chad reference really does use a pale gold,
-and `accent`, `hormozi` and `hormozi-outline` reproduce it — so `GOLD` stays
-`#FAE6A0` in those three and is not in the ink bank at all. A reproduction is
-not allowed to be improved. `beast` moved to the vivid yellow because `beast`
-reproduces nothing: there is no teardown behind it, so nothing is falsified by
-making it read.
+and `accent` reproduces it — hardcoded as `#FAE6A0` there rather than
+promoted into the ink bank. A reproduction is not allowed to be improved.
+`beast` moved to the vivid yellow because `beast` reproduces nothing: there is
+no teardown behind it, so nothing is falsified by making it read.
+(`hormozi` and `hormozi-outline` also carried the pale gold, for the same
+reproduction reason; both are gone as of 2026-09-16 — see "Deleted
+2026-09-16" above.)
 
 ## The background
 
 `background: { color, radius, padding }`. The radius is what `plate` never
 had, and it is the difference between a caption lying on the picture and one
-shaped like a piece of UI — `chip` is the look it exists for, and the only
-one in the bank with a radius.
+shaped like a piece of UI. No preset in the bank uses it right now — `chip`,
+the look it existed for, was cut on 2026-09-16 — but the mechanism stays: a
+post sets `background.radius` directly, or a future preset names it.
 
 `plate: true` still means exactly what it meant: the receipt plate, in the
 page's own paper, square-cornered, at 20/34 of padding. A `background`
@@ -296,7 +332,7 @@ pixels at a time until the page is inside `1080 - 2·safe.x` wide and
 `1920 - bandTop - safe.bottom` tall.
 
 An emphasised word is measured at its own `scale`, which is the case that
-actually overflows: `hormozi`'s second level is 1.5 em.
+actually overflows: `beast`'s second level is 1.5 em.
 
 It stops at `floor`, a fraction of the named size, **0.66** by default. Below
 that it overflows visibly rather than clipping — a caption that silently
@@ -339,14 +375,25 @@ beside a preset. The keys the drawing code reads:
 | `bandTop` | px, or a fraction of the canvas. Default 1180 of 1920 |
 | `maxWords` `maxChars` | read in Node by `paginate`, never by the band |
 
-`karaoke` and `accent` are the two caption SYSTEMS the teardowns measured, not
-inventions. And `docs/REFERENCES.md` is explicit that they are **per-account,
-not per-genre**: the French reference lights words out of a dim line and
-hand-picks a gold accent; Peterson, same genre, same gold uppercase over a
-talking head, does none of that — one colour, whole cards, hard swap, no dim
-state anywhere in 21 s sampled. A build that carried the first system over as
-"how captions work here" was wrong on screen until a teardown corrected it.
-**So this bank is a menu, never a default.**
+Dim-and-light and `accent`'s hand-picked persist were the two caption SYSTEMS
+the teardowns measured, not inventions. And `docs/REFERENCES.md` is explicit
+that they are **per-account, not per-genre**: the French reference lights
+words out of a dim line and hand-picks a gold accent; Peterson, same genre,
+same gold uppercase over a talking head, does none of that — one colour,
+whole cards, hard swap, no dim state anywhere in 21 s sampled. A build that
+carried the first system over as "how captions work here" was wrong on screen
+until a teardown corrected it. `karaoke`, the preset that carried dim-and-light,
+was cut on 2026-09-16 ("Deleted 2026-09-16", above); the mechanism itself
+(`dim` as a number, plus `mode: "words"`) is still there for a post that wants
+it directly.
+
+**This bank was a menu, never a default — until Martin picked one.** The
+warning above is about the ENGINE assuming a measured system generalizes; it
+does not cover the account's own operator judging every look side by side on
+identical footage and voice and naming a winner, which is what the Caption
+Floor was on 2026-09-16. `CAPTION_DEFAULTS` carries that winner now (see "The
+floor, and the day it was not the floor", above), and the bank stays a menu
+for everything that is not it.
 
 ## The spec
 
@@ -356,7 +403,7 @@ Everything in `theme.captions` (`fontSize`, `fontWeight`, `letterSpacing`,
 
 | key | what it is |
 |---|---|
-| `mode` | `page` · `words` · `bump`. The `--captions` flag still wins, so a mode can be auditioned without editing a file |
+| `mode` | `page` · `words` · `bump`. Default `bump` since 2026-09-16 (`CAPTION_DEFAULTS.mode`). The `--captions` flag still wins, so a mode can be auditioned without editing a file |
 | `bandTop` | now accepts a **fraction** as well as a pixel count. Anything at or below 1 is read as a fraction — no band has ever sat on row 1, so it is unambiguous, and a preset cannot know the canvas |
 
 ## Pagination is part of the look
@@ -364,8 +411,8 @@ Everything in `theme.captions` (`fontSize`, `fontWeight`, `letterSpacing`,
 `maxWords` / `maxChars` decide how a sentence is cut into pages, and that
 happens in **Node, at staging, before a frame exists**. So a preset that
 changed the type but not the pagination would be a preset that lies:
-`hormozi` at 3 words / 16 chars is a different sentence shape from `karaoke`
-at 6 / 34, and both have to reach `paginate()`.
+`beast` at 3 words / 16 chars is a different sentence shape from `plain` at
+6 / 40, and both have to reach `paginate()`.
 
 That is why `subtitles.mjs` is plain JS — `render-reel.mjs` runs the same
 resolution the component will. An unknown preset therefore throws **before a
@@ -401,6 +448,7 @@ quietly changing it would be the engine overruling the post. Name a darker
 `emphasisColor` beside the preset when the ground is light.
 
 **`beat.label` does not animate.** `quotePages` gives every word in a label
-the same start frame and does not parse `*emphasis*`, so `karaoke` and `bump`
-have nothing to reveal on a silent beat. Labels were built to name a beat in a
-demo sheet, not to carry a sentence; a real line goes through `say`.
+the same start frame and does not parse `*emphasis*`, so `words` mode and
+`bump` — the engine's own default since 2026-09-16 — have nothing to reveal on
+a silent beat. Labels were built to name a beat in a demo sheet, not to carry
+a sentence; a real line goes through `say`.

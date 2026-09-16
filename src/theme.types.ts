@@ -49,6 +49,14 @@ export type Fonts = {
 
 /** How the caption band is set. A skin's loudest single decision. */
 export type CaptionStyle = {
+  /**
+   * `page` | `words` | `bump`. Default `bump` (rebound arrival) since
+   * 2026-09-16 — Martin's ruling on the Caption Floor: "par rebond je trouve
+   * est meilleur par défaut". A theme is now allowed to set this like any
+   * other axis, which it was not before: the mode used to live only in a
+   * preset or in `reel.subtitles`/`beat.subtitles`, never in the base.
+   */
+  mode?: "page" | "words" | "bump";
   fontSize: number;
   fontWeight: number;
   letterSpacing: string;
@@ -63,28 +71,34 @@ export type CaptionStyle = {
   maxWords: number;
   maxChars: number;
   /**
-   * Brightness of a word NOT YET SPOKEN, 0-1.
+   * Brightness of a word NOT YET SPOKEN, 0-1, or `null` to refuse the mode
+   * entirely.
    *
    * Unset, an unspoken word is `visibility: hidden` — it holds its space so
    * the line never reflows, but it is invisible, so the sentence assembles
    * itself in front of the viewer. Set it and the whole line stands from the
    * first frame, dimmed, and each word LIGHTS UP on its cue.
    *
-   * Measured at 0.42 on the reference that does this. It reads calmer than
-   * the arriving version because nothing about the line changes except
-   * brightness, and it lets the viewer read ahead — which is the point.
+   * Measured at 0.42 on the reference that does this — one account's system,
+   * not the engine's: the default is `null` because `dim`'s mere PRESENCE
+   * switches word-arrival into dim-and-light, and that is not what the
+   * casino default does.
    */
-  dim?: number;
+  dim?: number | null;
   /**
-   * The colour of a word marked `*like this*` in the spoken line.
+   * The colour of a word marked `*like this*` in the spoken line, or `null`
+   * for none.
    *
    * Measured on the reference: exactly two colours ever appear, white
    * (254,252,251) and gold (249,237,164), and the gold is not the current
    * word nor a fixed vocabulary — the same word is gold in one sentence and
    * white in another. It follows the VOICE's stress, so it is the writer's
-   * call, not the engine's.
+   * call, not the engine's — which is also why the default is `null` rather
+   * than a colour (Martin, 2026-09-16: "par défaut il ne faudrait pas de
+   * couleur"): a `*marked*` word stays the fill's own colour until a look
+   * names one.
    */
-  emphasisColor?: string;
+  emphasisColor?: string | null;
   /**
    * What each level of `*emphasis*` LOOKS like — colour, size, fill.
    *
@@ -184,8 +198,8 @@ export type CaptionStyle = {
    * beat and its own halo over pictures, which is what shipped.
    *
    * A stroke and a shadow are two devices for one job and a look normally
-   * picks one: `beast` is 8 px of stroke and no shadow, `hormozi` is a
-   * `contact` halo and no stroke.
+   * picks one: `beast` is 16 px of stroke and no shadow, the engine default
+   * (the casino replica) is a soft shadow and no stroke.
    */
   shadow?: string | object | object[] | null;
   /**

@@ -282,7 +282,7 @@ for (const name of Object.keys(FOOTAGE_PRESETS)) {
 
 
 console.log("the subtitle style: a bank of looks, merged onto the theme");
-const { SUBTITLE_PRESETS, bandTopPx, resolveSubtitles } =
+const { SUBTITLE_PRESETS, bandTopPx, resolveSubtitles, CAPTION_DEFAULTS } =
   await import("../src/lab/subtitles.mjs");
 const THEME = { fontSize: 48, fontWeight: 400, plate: true, maxWords: 3, maxChars: 20 };
 
@@ -293,17 +293,26 @@ ok("no spec returns the theme untouched",
 ok("`plain` is a name for the floor",
    resolveSubtitles("plain", THEME).fontSize === 48);
 
-ok("a preset overrides the theme", resolveSubtitles("hormozi", THEME).fontSize === 96);
+ok("a preset overrides the theme", resolveSubtitles("beast", THEME).fontSize === 96);
 ok("a key beside the preset wins over it",
-   resolveSubtitles({ preset: "hormozi", fontSize: 120 }, THEME).fontSize === 120);
+   resolveSubtitles({ preset: "beast", fontSize: 120 }, THEME).fontSize === 120);
 ok("a preset that says nothing about a key leaves the theme's",
    resolveSubtitles("accent", THEME).fontSize === 48);
 throws("an unknown preset names the ones that exist",
        () => resolveSubtitles({ preset: "nope" }, THEME), /no preset "nope"/);
 
-// The two caption SYSTEMS the teardowns measured have to survive the trip.
-ok("karaoke carries the measured dim of 0.42", resolveSubtitles("karaoke", THEME).dim === 0.42);
-ok("karaoke lights word by word", resolveSubtitles("karaoke", THEME).mode === "words");
+// THE ENGINE DEFAULT ITSELF, since 2026-09-16: the casino replica, corrected
+// — bold on every word, a soft shadow, no stroke, rebound arrival, no colour
+// until a look names one. `plain` (`{}`) IS this look now, which is why the
+// two systems below are checked against `CAPTION_DEFAULTS` and not a preset.
+ok("the default is bump mode, one weight, no colour",
+   resolveSubtitles(undefined, CAPTION_DEFAULTS).mode === "bump" &&
+   resolveSubtitles(undefined, CAPTION_DEFAULTS).fontWeight === 700 &&
+   resolveSubtitles(undefined, CAPTION_DEFAULTS).emphasisColor === null);
+ok("the default carries dim: null, a shadow and no stroke",
+   resolveSubtitles(undefined, CAPTION_DEFAULTS).dim === null &&
+   resolveSubtitles(undefined, CAPTION_DEFAULTS).shadow === "auto" &&
+   !resolveSubtitles(undefined, CAPTION_DEFAULTS).stroke);
 ok("accent carries a persisting gold and no dim",
    resolveSubtitles("accent", THEME).emphasisColor === "#FAE6A0" &&
    resolveSubtitles("accent", THEME).dim === undefined);
@@ -370,7 +379,7 @@ for (const name of Object.keys(CUTOUT_PRESETS)) {
 }
 
 console.log("the caption default: ONE object, and the keys that were dead");
-const { CAPTION_DEFAULTS, CAPTION_FACE } = await import("../src/lab/subtitles.mjs");
+const { CAPTION_FACE } = await import("../src/lab/subtitles.mjs");
 
 // The whole point of moving it here. If these ever drift again, every themed
 // project renders a caption nobody chose — which is what happened between
@@ -390,9 +399,9 @@ ok("a project's own keys win over the default",
    resolveSubtitles(undefined, asTally).fontWeight === 400 &&
    resolveSubtitles(undefined, asTally).saidWeight === 800);
 ok("and a preset still wins over the project",
-   resolveSubtitles("hormozi", asTally).fontWeight === 800);
+   resolveSubtitles("beast", asTally).fontWeight === 800);
 ok("while a key beside the preset wins over both",
-   resolveSubtitles({ preset: "hormozi", fontWeight: 500 }, asTally).fontWeight === 500);
+   resolveSubtitles({ preset: "beast", fontWeight: 500 }, asTally).fontWeight === 500);
 
 // `dim` is not a cosmetic knob — its PRESENCE switches the band from
 // word-arrival to dim-and-light, so a project has to be able to say "none".
@@ -482,8 +491,8 @@ ok("a background beside a plate wins, radius and all",
    })());
 ok("one padding number means both axes",
    resolveBackground({ background: { padding: 12 } }, "#000").py === 12);
-ok("chip is the only look in the bank with a radius",
-   Object.entries(SUBTITLE_PRESETS).filter(([, v]) => v.background?.radius).map(([k]) => k).join() === "chip");
+ok("no preset in the bank uses a background radius",
+   Object.entries(SUBTITLE_PRESETS).filter(([, v]) => v.background?.radius).length === 0);
 
 ok("paper names no colour — it is the floor", Object.keys(CAPTION_INKS.paper).length === 0);
 

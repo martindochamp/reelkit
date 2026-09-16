@@ -25,7 +25,7 @@
  *   textTransform?: "uppercase"|"none",
  *   plate?: boolean, background?: {color?: string, radius?: number, padding?: number|number[]},
  *   maxWords?: number, maxChars?: number,
- *   dim?: number, emphasisColor?: string,
+ *   dim?: number|null, emphasisColor?: string|null,
  *   emphasis?: { color?: string, scale?: number, outline?: number }[],
  *   bandTop?: number, stroke?: number, strokeColor?: string, color?: string,
  *   saidWeight?: number, saidColor?: string, fontStyle?: "normal"|"italic", shadow?: string|object|object[]|null, ink?: string|object,
@@ -52,14 +52,31 @@
  *
  * MEASURED, not chosen (Martin, 2026-09-09: "les soustitres avec la police
  * espacements positions et autres est parfaite, ça devrait être celle de
- * défaut"). These are the values the casino reproduction ran on, and the
- * teardowns agree across references: no plate, heavy weight, mixed case,
- * tight tracking, one gold.
+ * défaut"), and then CORRECTED on the Caption Floor, 2026-09-16: bold 700 on
+ * every word — no per-word weight change — a soft shadow, no stroke, mixed
+ * case, about six words on the page at once. This is not a preset any more;
+ * it is the engine default, so a project that never touches `subtitles` or
+ * `theme.captions` gets it, and `plain` (`{}`) IS this look.
+ *
+ * Two more rulings from the same session, both engine defaults now rather
+ * than a preset's opinion:
+ *
+ * - "par défaut il ne faudrait pas de couleur" — no emphasis colour and no
+ *   spoken-word colour BY DEFAULT. `emphasisColor: null` means a `*marked*`
+ *   word stays the fill's own colour until a look names one.
+ * - "par rebond je trouve est meilleur par défaut" — `bump` (the word grows
+ *   into place, see `BUMP_FROM`/`BUMP_OVER` in Reel.tsx) is the default
+ *   MODE, not `page`.
+ *
+ * `dim: null` is a correction rather than an omission, same as before: its
+ * mere PRESENCE switches word-arrival into dim-and-light, which is one
+ * reference's system and not this one's.
  */
 export const CAPTION_FACE =
   '"Helvetica Neue", "Inter", "SF Pro Display", -apple-system, sans-serif';
 
 export const CAPTION_DEFAULTS = {
+  mode: "bump",
   fontSize: 66,
   fontWeight: 700,
   letterSpacing: "-0.01em",
@@ -67,8 +84,9 @@ export const CAPTION_DEFAULTS = {
   plate: false,
   maxWords: 6,
   maxChars: 40,
-  dim: 0.42,
-  emphasisColor: "#F9EDA4",
+  dim: null,
+  emphasisColor: null,
+  shadow: "auto",
 };
 
 /**
@@ -84,13 +102,6 @@ export const CAPTION_DEFAULTS = {
  * as "how captions work here" was wrong on screen until a teardown corrected
  * it. So this bank is a menu, never a default.
  */
-/**
- * The gold every measured reference in this genre lands on: RGB(250,231,160)
- * on chad-128-135, the same swatch as its frame border, and within a shade of
- * chad-48-55's (249,237,164) and chad-00-07's (247,238,146).
- */
-const GOLD = "#FAE6A0";
-
 /**
  * The rounded, casual letterform of the loud retention caption.
  *
@@ -108,7 +119,7 @@ const GOLD = "#FAE6A0";
  * Comic Sans itself has strokes too thin to look heavy at all.
  *
  * The cost of that choice, stated because it is real: Chalkboard SE ships
- * Regular and Bold and nothing above, so `LOUD`'s weight of 800 is
+ * Regular and Bold and nothing above, so `beast`'s weight of 800 is
  * SYNTHESISED by the renderer rather than drawn. SF Pro Rounded is next in
  * the stack and does carry Heavy and Black, so a project that wants a real
  * 800 names it — `{ "preset": "beast", "fontFamily": "\"SF Pro Rounded\"" }`
@@ -118,17 +129,6 @@ const GOLD = "#FAE6A0";
 export const ROUNDED =
   '"Chalkboard SE", "SF Pro Rounded", "SF Compact Rounded", ' +
   '"Arial Rounded MT Bold", "Comic Sans MS", ui-rounded, sans-serif';
-
-/**
- * The loud caps body, shared by `hormozi`, `hormozi-outline` and `beast` —
- * so the three differ only where they differ, and none of them can drift a
- * font size away from the others by accident.
- */
-const LOUD = {
-  mode: "bump", fontSize: 96, fontWeight: 800, letterSpacing: "0.01em",
-  textTransform: "uppercase", plate: false, dim: null,
-  maxWords: 3, maxChars: 16,
-};
 
 /**
  * THE SEPARATION: a stroke, or a shadow, and they are two different devices.
@@ -446,14 +446,6 @@ export const SUBTITLE_PRESETS = {
   plain: {},
 
   /**
-   * Dim-and-light. The whole line stands from the first frame at 0.42
-   * brightness and each word snaps to full on its cue, in one frame. The line
-   * never reflows, so the viewer can read ahead — which is the point.
-   * Measured on the French reference.
-   */
-  karaoke: { mode: "words", dim: 0.42, plate: false, maxWords: 6, maxChars: 34 },
-
-  /**
    * Hand-picked accent. Exactly two colours ever appear. The gold is not the
    * current word and not a fixed vocabulary — it follows the voice's stress,
    * so it is the writer's call. It PERSISTS once printed, same size, same
@@ -463,21 +455,6 @@ export const SUBTITLE_PRESETS = {
     mode: "page", plate: false, emphasisColor: "#FAE6A0",
     emphasis: [{ color: "#FAE6A0" }],
   },
-
-  /**
-   * The genre default: big, heavy, upper, two or three words, no plate.
-   *
-   * `dim: null` is a CORRECTION, not a preference. The default carries the
-   * French reference's 0.42, and in a word-arrival mode its mere presence
-   * makes the whole page stand dim and light up — which is that one
-   * reference's system and not this one's. Measured on chad-48-55: "No fade
-   * was found at any reset — every word arrives at full opacity on its first
-   * visible frame." Same for every preset below that arrives.
-   */
-  hormozi: { ...LOUD, shadow: "contact", emphasis: [{ color: GOLD }, { color: GOLD, scale: 1.5 }] },
-
-  /** The same, with the hollow second level one reference actually uses. */
-  "hormozi-outline": { ...LOUD, shadow: "contact", emphasis: [{ color: GOLD }, { color: GOLD, outline: 3 }] },
 
   /**
    * THE PLATFORM CAPTION: a solid white fill inside a hard black stroke,
@@ -509,11 +486,17 @@ export const SUBTITLE_PRESETS = {
    *
    * PROVENANCE, because this bank's rule is that a look is measured and not
    * invented: **there is no MrBeast teardown in this repo.** So this preset
-   * carries NO numbers of its own. It is `hormozi` — itself measured on the
-   * chad reference, 45 px cap uppercase black geometric with a gold payoff
-   * word at 2.6× — plus the stroke measured on the three references above.
-   * That is the whole difference between the two looks on screen, and it is
-   * written here as a spread so nobody has to trust a comment.
+   * carries NO numbers of its own. Its caps body — 96 px uppercase, weight
+   * 800, three words, no plate, `dim: null` — is measured on the chad
+   * reference, 45 px cap uppercase black geometric with a gold payoff word
+   * at 2.6×, plus the stroke measured on the three references above. That is
+   * the whole difference between the two looks on screen, and it is written
+   * here as plain values so nobody has to trust a comment.
+   *
+   * That caps body used to be a shared `LOUD` constant with two other
+   * presets built the same way; both were cut on 2026-09-16 (see
+   * docs/SUBTITLES.md, "Deleted 2026-09-16"), so it is inlined here now that
+   * it has one owner rather than kept as a constant for it.
    *
    * If the real thing is wanted properly, tear one down: the construction to
    * check is the drop shadow UNDER the stroke (this has none, because none of
@@ -521,7 +504,9 @@ export const SUBTITLE_PRESETS = {
    * per word or per card.
    */
   beast: {
-    ...LOUD,
+    mode: "bump", fontSize: 96, fontWeight: 800, letterSpacing: "0.01em",
+    textTransform: "uppercase", plate: false, dim: null,
+    maxWords: 3, maxChars: 16,
     fontFamily: ROUNDED,
     // The stroke IS this look, so it carries no shadow: two separations on
     // one word is a muddy edge, and at this weight the stroke has already
@@ -542,94 +527,6 @@ export const SUBTITLE_PRESETS = {
     emphasis: [{ color: "#FFE800" }, { color: "#FFE800", scale: 1.5 }],
   },
 
-  /**
-   * Gold caps over a talking head, and nothing else — measured on the
-   * Peterson reference and deliberately plainer than it looks.
-   *
-   * Every one of ~40 cards in 21 s is the SAME gold (RGB 248,200,58): no
-   * white default state, no emphasis colour, no per-word dim, no fade, no
-   * "currently spoken word goes heavy" — both words of a two-word card hold
-   * identical weight for the whole hold, and cards swap as a hard cut. The
-   * band sits at 75-78 % of the frame, under the video, and recentres to
-   * ~48-51 % on a card with no video band; only the first is expressible.
-   *
-   * 36-37 px cap @720 → 55 @1080 → 76 px at a bold grotesk's 0.72 em.
-   */
-  peterson: {
-    mode: "page", plate: false, dim: null,
-    fontSize: 76, fontWeight: 800, letterSpacing: "0.01em",
-    // "Shadow: none detected — the glyph-to-background transition is
-    // symmetric on every edge checked, not offset down/right the way a cast
-    // shadow would read." So: neither device. The gold carries itself.
-    textTransform: "uppercase", ink: "amber", shadow: "none",
-    maxWords: 4, maxChars: 22, bandTop: 0.76,
-  },
-
-  /**
-   * A ROUNDED PLATE, and the only look here that uses one: a white chip with
-   * black text inside it, no stroke, no shadow. The background axis —
-   * colour, radius, padding — exists for this.
-   *
-   * Measured twice. speechify-ad System B: "a small, solid white rounded-rect
-   * plate with plain black text, no outline/stroke, no drop shadow", ~46 px
-   * tall on a 640-high canvas. The korean hook's boxes give the radius:
-   * "≈15px at 720 width" → 22 at 1080. Both are the same device — the caption
-   * takes the shape of a UI chip rather than floating over the picture.
-   */
-  chip: {
-    mode: "page", dim: null, shadow: "none",
-    fontSize: 52, fontWeight: 600, letterSpacing: "0em", textTransform: "none",
-    ink: "inverse",
-    background: { color: "#FFFFFF", radius: 22, padding: [16, 30] },
-    maxWords: 5, maxChars: 30,
-  },
-
-  /**
-   * A HEAVY CLASSY FACE WITH A SHADOW AND NO STROKE (Martin, 2026-09-11:
-   * "certaines avec shadow ont des polices classes et épaisses").
-   *
-   * The other half of the stroke/shadow choice, and the reason the choice
-   * exists: a grotesque this tight would lose its counters under 16 px of
-   * stroke, so the separation is a `drop` instead. Mixed case, because the
-   * face's own weight is the emphasis and shouting it in caps would be
-   * saying the same thing twice.
-   */
-  editorial: {
-    mode: "page", plate: false, dim: null,
-    fontFamily: '"Avenir Next", "SF Pro Display", "Helvetica Neue", sans-serif',
-    fontSize: 78, fontWeight: 800, letterSpacing: "-0.02em", textTransform: "none",
-    ink: "punch", shadow: "drop",
-    maxWords: 5, maxChars: 28,
-  },
-
-  /**
-   * Impact, uppercase, very thick stroke — the condensed loud face, which is
-   * on every machine and has exactly one weight because it does not need
-   * another. Condensed means more characters fit the safe box at a size the
-   * rounded faces cannot reach, so the cap is higher here.
-   */
-  impact: {
-    mode: "bump", plate: false, dim: null,
-    fontFamily: '"Impact", "Haettenschweiler", "Arial Narrow Bold", sans-serif',
-    fontSize: 108, fontWeight: 400, letterSpacing: "0.01em", textTransform: "uppercase",
-    ink: "punch", stroke: 14, shadow: "none",
-    maxWords: 4, maxChars: 22,
-  },
-
-  /** A solid card under the words. The receipt look, and the only one with a plate. */
-  card: { mode: "page", plate: true, fontSize: 48, fontWeight: 400, maxWords: 3, maxChars: 20 },
-
-  /** Small, low, out of the way. For a reel whose picture is the argument. */
-  whisper: {
-    mode: "page", plate: false, fontSize: 38, fontWeight: 400,
-    letterSpacing: "0.12em", maxWords: 5, maxChars: 30, bandTop: 0.82,
-  },
-
-  /** Centred in the frame rather than banded low — for a beat with no picture. */
-  centred: {
-    mode: "bump", plate: false, fontSize: 88, fontWeight: 700,
-    textTransform: "uppercase", maxWords: 3, maxChars: 16, bandTop: 0.44,
-  },
 };
 
 /**
