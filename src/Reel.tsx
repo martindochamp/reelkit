@@ -18,6 +18,7 @@ import {
   type StageMode,
 } from "./ReelElements";
 import { captionStyle, fonts, mono, palettes, safe, type Palette } from "./tokens";
+import { useCaptionFace } from "./fonts";
 import { DynamicBackground, type FieldSpec } from "./lab/DynamicBackground";
 import {
   bandTopPx,
@@ -591,6 +592,11 @@ const Captions: React.FC<{
   style: typeof captionStyle;
 }> = ({ pages, mode, bands, style }) => {
   const frame = useCurrentFrame();
+  // Before any early return: a hook cannot follow one. The face is loaded
+  // before the fit below measures anything with it.
+  useCaptionFace(
+    `${style.fontStyle ?? "normal"} ${style.fontWeight} 64px ${style.fontFamily ?? fonts.caption}`,
+  );
   const page = [...pages].reverse().find((p) => frame >= p.startFrame);
   const band = [...bands].reverse().find((b) => frame >= b.startFrame) ?? bands[0];
   const { overArt, palette } = band;
